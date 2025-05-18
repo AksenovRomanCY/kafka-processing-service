@@ -11,5 +11,10 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
     )
 
+    KAFKA_BOOTSTRAP_SERVERS: str = "kafka:9092"
+    KAFKA_INPUT_TOPIC: str = "input"
+    KAFKA_OUTPUT_TOPIC: str = "output"
+    KAFKA_ERROR_TOPIC: str = "error"
+
 
 settings = Settings()
