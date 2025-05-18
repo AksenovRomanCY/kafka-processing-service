@@ -17,3 +17,4 @@ typing_extensions==4.13.2
 tzdata==2025.2
 vine==5.1.0
 wcwidth==0.2.13
+pydantic_settings==2.9.1
