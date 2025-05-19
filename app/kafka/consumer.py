@@ -5,9 +5,7 @@ from aiokafka import AIOKafkaConsumer
 
 from app.kafka.producer import send_to_kafka
 from app.settings import settings
-
-# TODO: импортируем Celery task на следующем этапе
-# from app.tasks import task1
+from app.worker_tasks import task_1
 
 
 async def consume():
@@ -35,8 +33,8 @@ async def consume():
 
                 print(f"[Kafka] Валидное значение: {number}")
 
-                # TODO: вызов Celery задачи (будет на следующем этапе)
-                # task1.delay(number)
+                res = task_1.delay(number)
+                print(f"[Kafka] Celery task_1 запущена с ID: {res.id}")
 
             except Exception as e:
                 print(f"[Kafka][Ошибка] Невалидное сообщение: {raw_value} — {e}")
