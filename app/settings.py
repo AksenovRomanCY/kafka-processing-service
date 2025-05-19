@@ -16,5 +16,9 @@ class Settings(BaseSettings):
     KAFKA_OUTPUT_TOPIC: str = "output"
     KAFKA_ERROR_TOPIC: str = "error"
 
+    REDIS_BROKER_URL: str = "redis://redis:6379/0"
+
+    CELERY_MAX_RETRIES: int = 3
+
 
 settings = Settings()
