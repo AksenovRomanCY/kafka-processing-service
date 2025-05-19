@@ -1,3 +1,4 @@
+import asyncio
 import random
 
 from app.celery_app import celery_app
@@ -41,7 +42,9 @@ def task_2(self, value: float):  # noqa
     result = value - 1000
     print(f"[Task2] После -1000: {result}")
 
-    return send_to_kafka(
-        topic=settings.KAFKA_OUTPUT_TOPIC,
-        data={"result": result},
+    return asyncio.run(
+        send_to_kafka(
+            topic=settings.KAFKA_OUTPUT_TOPIC,
+            data={"result": result},
+        )
     )
