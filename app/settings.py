@@ -18,7 +18,10 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
-    REDIS_BROKER_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+
+    @property
+    def REDIS_BROKER_URL(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
     CELERY_MAX_RETRIES: int = 3
 
