@@ -22,7 +22,6 @@ def task_1(self, value: float):  # noqa
     new_value = value + 100
     print(f"[Task1] После +100: {new_value}")
 
-    # TODO: можно добавить chain для явной передачи в task2
     return task_2.delay(new_value)
 
 

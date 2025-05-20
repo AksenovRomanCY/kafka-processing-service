@@ -14,7 +14,7 @@ async def consume():
         bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
         value_deserializer=lambda m: m.decode("utf-8"),
         auto_offset_reset="earliest",
-        enable_auto_commit=True,
+        enable_auto_commit=False,
         group_id="kafka-handler-group",
     )
     await consumer.start()
@@ -43,10 +43,12 @@ async def consume():
                     topic=settings.KAFKA_ERROR_TOPIC, data={"error": raw_value}
                 )
 
+            finally:
+                await consumer.commit()
+
     finally:
         await consumer.stop()
 
 
 if __name__ == "__main__":
-    # TODO: позже можно заменить на запуск через supervisor/gunicorn
     asyncio.run(consume())
