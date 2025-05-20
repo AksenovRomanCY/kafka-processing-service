@@ -39,7 +39,7 @@ services:
       interval: 10s
       retries: 5
 
-  init-topics:
+  init-kafka-topics:
     image: bitnami/kafka:3.7
     depends_on:
       kafka:
