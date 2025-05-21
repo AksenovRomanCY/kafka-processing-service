@@ -107,7 +107,6 @@ async def test_handle_message_float_and_negative(monkeypatch, capsys):
     monkeypatch.setattr(task_1, "delay", DummyTask.delay)
 
     for val in [3.14, -1000.5]:
-        sent = None
         await handle_message(json.dumps({"value": val}))
         out = capsys.readouterr().out
         assert f"[Kafka] Валидное значение: {val}" in out
