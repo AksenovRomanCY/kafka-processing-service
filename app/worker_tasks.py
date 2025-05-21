@@ -12,6 +12,22 @@ from app.settings import settings
     retry_backoff=True,
     max_retries=settings.CELERY_MAX_RETRIES,
 )
+def send_kafka_task(self, result: float):
+    """Asynchronously sends data to Kafka without blocking the calling shuffle."""
+    return asyncio.run(
+        send_to_kafka(
+            topic=settings.KAFKA_OUTPUT_TOPIC,
+            data={"result": result},
+        )
+    )
+
+
+@celery_app.task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    max_retries=settings.CELERY_MAX_RETRIES,
+)
 def task_1(self, value: float):  # noqa
     """Process the input value by adding 100 and scheduling the next task.
 
@@ -35,7 +51,7 @@ def task_1(self, value: float):  # noqa
     new_value = value + 100
     print(f"[Task1] After +100: {new_value}")
 
-    return task_2.delay(new_value)
+    task_2.delay(new_value)
 
 
 @celery_app.task(
@@ -67,11 +83,5 @@ def task_2(self, value: float):  # noqa
     result = value - 1000
     print(f"[Task2] After -1000: {result}")
 
-    # Execute the Kafka send operation; blocks until completion.
-    # TODO: fix flow blocking
-    return asyncio.run(
-        send_to_kafka(
-            topic=settings.KAFKA_OUTPUT_TOPIC,
-            data={"result": result},
-        )
-    )
+    # Send to Kafka asynchronously
+    send_kafka_task.delay(result)
