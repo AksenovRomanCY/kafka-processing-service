@@ -38,3 +38,10 @@ docker-compose ps
 ```bash
 docker-compose down -v
 ```
+
+## Developing
+
+Before development and testing, you must be sure to establish development dependencies.
+```bash
+pip3 install -r requirements.dev.txt
+```
