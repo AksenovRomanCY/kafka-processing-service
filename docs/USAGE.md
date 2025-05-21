@@ -3,7 +3,7 @@
 ## 🚀 Startup and shutdown
 
 ```bash
-docker-compose up
+docker-compose up -d
 ```
 ```bash
 docker-compose down
