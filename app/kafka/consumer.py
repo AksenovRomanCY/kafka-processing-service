@@ -8,6 +8,26 @@ from app.settings import settings
 from app.worker_tasks import task_1
 
 
+async def handle_message(raw_value: str) -> None:
+    try:
+        payload = json.loads(raw_value)
+        number = payload.get("value")
+        if not isinstance(number, (int, float)):
+            raise ValueError("Поле 'value' отсутствует или не число")
+
+        print(f"[Kafka] Валидное значение: {number}")
+
+        res = task_1.delay(number)
+        print(f"[Kafka] Celery task_1 запущена с ID: {res.id}")
+
+    except Exception as e:
+        print(f"[Kafka][Ошибка] Невалидное сообщение: {raw_value} — {e}")
+        await send_to_kafka(
+            topic=settings.KAFKA_ERROR_TOPIC,
+            data={"error": raw_value},
+        )
+
+
 async def consume():
     consumer = AIOKafkaConsumer(
         settings.KAFKA_INPUT_TOPIC,
@@ -24,27 +44,9 @@ async def consume():
             raw_value = msg.value
             print(f"[Kafka] Получено сообщение: {raw_value}")
 
-            try:
-                payload = json.loads(raw_value)
-                number = payload.get("value")
+            await handle_message(raw_value)
 
-                if not isinstance(number, (int, float)):
-                    raise ValueError("Поле 'value' отсутствует или не число")
-
-                print(f"[Kafka] Валидное значение: {number}")
-
-                res = task_1.delay(number)
-                print(f"[Kafka] Celery task_1 запущена с ID: {res.id}")
-
-            except Exception as e:
-                print(f"[Kafka][Ошибка] Невалидное сообщение: {raw_value} — {e}")
-
-                await send_to_kafka(
-                    topic=settings.KAFKA_ERROR_TOPIC, data={"error": raw_value}
-                )
-
-            finally:
-                await consumer.commit()
+            await consumer.commit()
 
     finally:
         await consumer.stop()
