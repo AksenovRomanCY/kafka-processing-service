@@ -1,13 +1,11 @@
-import os
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-env_file_path = ".env" if os.path.exists(".env") else ".env.example"
 
 
 class Settings(BaseSettings):
+    """Configure Pydantic to load environment variables from a ".env" file."""
+
     model_config = SettingsConfigDict(
-        env_file=env_file_path,
+        env_file=".env",
         env_file_encoding="utf-8",
     )
 
@@ -21,9 +19,11 @@ class Settings(BaseSettings):
 
     @property
     def REDIS_BROKER_URL(self) -> str:
+        """Construct the Redis URL for use as a Celery broker."""
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
     CELERY_MAX_RETRIES: int = 3
 
 
+# Instantiate the settings object, loading any overrides from the environment.
 settings = Settings()

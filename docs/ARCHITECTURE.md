@@ -1,32 +1,32 @@
 # Architecture
 
-## 📌 Компоненты
+## 📌 Components
 
 ### 1. Kafka Consumer (Python + aiokafka)
 
-- Читает сообщения из Kafka `input`
-- Валидирует JSON и наличие числового поля `value`
-- Ошибки — в Kafka `error`
-- Валидные данные — передаются в `task_1`
-- Offset коммитится вручную
+- Reads messages from Kafka `input`
+- Validates JSON and presence of numeric field `value`
+- Errors - passed to Kafka `error`
+- Valid data - passed to `task_1`
+- Offset is committed manually
 
 ### 2. Celery Worker (Python + Redis)
 
 #### `task_1`:
-- Получает число, печатает его
-- Генерирует исключение с вероятностью 30%
-- При успехе: прибавляет 100 и передаёт `task_2`
+- Gets a number, prints it
+- Generates an exception with a 30% probability
+- On success: adds 100 and passes `task_2`.
 
 #### `task_2`:
-- Получает число, печатает
-- Генерирует исключение с вероятностью 30%
-- При успехе: вычитает 1000 и отправляет результат в Kafka `output` в формате:
+- Gets a number, prints
+- Generates an exception with a 30% probability
+- On success: subtracts 1000 and sends the result to Kafka `output` format:
 ```json
-{ "result": <число> }
+{ "result": <number> }
 ```
 
-Обе задачи используют `autoretry_for`, `retry_backoff`, `max_retries=3`.
+Both tasks use `autoretry_for`, `retry_backoff`, `max_retries=3`.
 
-## 🔁 Поток данных
+## 🔁 Data flow
 
 ![Архитектура](img/message-flow.png)

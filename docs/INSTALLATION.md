@@ -1,39 +1,39 @@
 # Installation
 
-## 📋 Предварительные требования
+## 📋 Preliminary requirements
 
 - Docker & Docker Compose
-- (Опционально) Python 3.12 и pip для локальной разработки
+- (Optional) Python 3.12 and pip for local development
 
-## 📦 Клонирование и настройка
+## 📦 Cloning and customization
 
 ```bash
-git clone https://github.com/your-org/your-repo.git
-cd your-repo
+git clone https://github.com/AksenovRomanCY/kafka-processing-service.git
+cd kafka-processing-service
 cp .env.example .env
 ```
 
-При необходимости измените `.env` (например, `KAFKA_BOOTSTRAP_SERVERS`, `REDIS_HOST`, `KAFKA_INPUT_TOPIC` и т. д.)
+Modify `.env` if necessary (e.g. `KAFKA_BOOTSTRAP_SERVERS`, `REDIS_HOST`, `KAFKA_INPUT_TOPIC`, etc.).
 
-## 🚀 Первый запуск
+## 🚀 First launch
 
 ```bash
 docker-compose up -d --build
 ```
 
-Будут запущены:
+It will be launched:
 - Kafka + Zookeeper
 - Redis
 - Consumer
 - Celery Worker
-- init-kafka-topics (создаёт `input`, `output`, `error`)
+- init-kafka-topics (creates `input`, `output`, `error`)
 
-Проверка статуса:
+Status check:
 ```bash
 docker-compose ps
 ```
 
-## 🧹 Остановка и очистка
+## 🧹 Stopping and cleaning
 
 ```bash
 docker-compose down -v

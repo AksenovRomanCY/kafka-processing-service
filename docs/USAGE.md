@@ -1,6 +1,6 @@
 # Usage
 
-## 🚀 Запуск и остановка
+## 🚀 Startup and shutdown
 
 ```bash
 docker-compose up
@@ -9,38 +9,38 @@ docker-compose up
 docker-compose down
 ```
 
-## 📤 Отправка данных в Kafka `input`
+## 📤 Sending data to Kafka `input`
 
 ```bash
 docker-compose exec kafka   kafka-console-producer.sh   --bootstrap-server kafka:9092   --topic input
 ```
 
-Примеры сообщений:
+Examples of messages:
 ```json
 {"value": 10}
 {"value": 42.5}
-{"foo": "bar"}  // невалидно — попадёт в error
+{"foo": "bar"}  // invalid - goes to error
 ```
 
-## 📥 Чтение из Kafka `output`
+## 📥 Reading from Kafka `output`
 
 ```bash
 docker-compose exec kafka   kafka-console-consumer.sh   --bootstrap-server kafka:9092   --topic output   --from-beginning   --timeout-ms 10000
 ```
 
-Ожидаемый результат формата:
+Expected Format Outcome:
 ```json
 {"result": -990}
 {"result": -957.5}
 ```
 
-## ⚠️ Чтение ошибок из Kafka `error`
+## ⚠️ Reading errors from Kafka `error`
 
 ```bash
 docker-compose exec kafka   kafka-console-consumer.sh   --bootstrap-server kafka:9092   --topic error   --from-beginning   --timeout-ms 10000
 ```
 
-Пример:
+Expected Format Outcome:
 ```json
 {"error": "{"foo":"bar"}"}
 ```

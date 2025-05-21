@@ -1,15 +1,15 @@
 <!-- README.md -->
 # Kafka Processing Service
 
-Приложение имитирует процесс фоновой обработки задач:
+The application simulates the background processing of tasks:
 
-1. **Consumer**: читает из Kafka (`input`), валидирует JSON с числом, при ошибке отправляет в `error`, при успехе запускает фоновые задачи.
-2. **Фоновые задачи (Celery + Redis)**:
-   - `task_1`: печатает вход, прибавляет 100, на случайный момент генерирует исключение и, при успехе, передаёт `task_2`.
-   - `task_2`: печатает вход, вычитает 1000, генерирует исключение и, при успехе, отправляет JSON-результат в Kafka `output`.
-   Настроены автоматические ретраи (до 3 попыток, экспоненциальный backoff) — данные не теряются.
+1. **Consumer**: reads from Kafka (`input`), validates JSON with a number, sends to `error` on error, runs background tasks on success.
+2. **Background tasks (Celery + Redis)**:
+   - `task_1`: prints the input, adds 100, generates an exception at a random moment and, on success, passes `task_2`.
+   - `task_2`: prints the input, subtracts 1000, generates an exception and, on success, sends the JSON result to Kafka `output`.
+   Automatic retries are provided - no data is lost.
 
-Документация:
+Documentation:
 - 📦 [INSTALLATION](docs/INSTALLATION.md)
 - 🚀 [USAGE](docs/USAGE.md)
 - 🏗️ [ARCHITECTURE](docs/ARCHITECTURE.md)

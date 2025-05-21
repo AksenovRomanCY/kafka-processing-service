@@ -2,28 +2,28 @@
 
 ## ✅ Unit Tests
 
-### Запуск:
+### Launch:
 
 ```bash
 pytest
 ````
 
-### Что покрыто:
+### What's covered:
 
-* **Валидация JSON** в `handle_message`:
+* **Validation of JSON** in `handle_message`:
 
-  * валидный payload
-  * некорректный JSON
-  * отсутствие поля `value` или `null`
-  * нечисловое значение
-  * float и отрицательные числа
+  * valid payload
+  * invalid JSON
+  * missing `value` or `null` field
+  * non-numeric value
+  * float and negative numbers
 
-* **Логика Celery-тасков** `task_1` и `task_2`:
+* **Celery-task logic** `task_1` and `task_2`:
 
-  * успешный путь (`value + 100 → task_2.delay`; `value - 1000 → send_to_kafka`)
-  * ветка исключения (распаковка `random_fail`)
+  * successful path (`value + 100 → task_2.delay`; `value - 1000 → send_to_kafka`)
+  * exception branch (unpacking `random_fail`)
 
-* **Подмена всех вызовов** `send_to_kafka` на заглушку
+* **Swap all calls** of `send_to_kafka` to a stub
 
 ## 🔬 E2E (docker-compose)
 
@@ -31,6 +31,6 @@ pytest
 docker-compose up --build --abort-on-container-exit
 ```
 
-Проверка:
-* Все сервисы запускаются
-* Консольные продьюсер / консьюмер работают корректно
+Check:
+* All services are running
+* Console producer/consumer is working correctly

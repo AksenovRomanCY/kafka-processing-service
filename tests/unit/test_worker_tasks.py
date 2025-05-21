@@ -5,9 +5,7 @@ from app.worker_tasks import task_1, task_2
 
 @pytest.mark.usefixtures("random_success")
 def test_task_1_success(monkeypatch):
-    """
-    При random=0.5→нет исключения, value+100 передаётся в task_2.delay
-    """
+    """When random=0.5 → no exception, value+100 is passed to task_2.delay"""
     called = {}
 
     def fake_delay(v):
@@ -23,19 +21,17 @@ def test_task_1_success(monkeypatch):
 
 @pytest.mark.usefixtures("random_fail")
 def test_task_1_failure(monkeypatch):
-    """
-    При random<0.3→бросается исходное Exception.
-    """
+    """If random<0.3 → the original Exception is thrown."""
     with pytest.raises(Exception) as exc:
         task_1.run(value=5)
-    assert "Случайная ошибка в task1" in str(exc.value)
+    assert "Accidental error in task1" in str(exc.value)
 
 
 @pytest.mark.usefixtures("random_success")
 def test_task_2_success(monkeypatch):
     """
-    При random=0.5→нет исключения, внутри task_2
-    должна вызваться send_to_kafka с result = value-1000
+    If random=0.5 → no exception, inside task_2
+    send_to_kafka should be called with a result = value-1000.
     """
     sent = {}
 
@@ -52,9 +48,7 @@ def test_task_2_success(monkeypatch):
 
 @pytest.mark.usefixtures("random_fail")
 def test_task_2_failure(monkeypatch):
-    """
-    При random<0.3→бросается исходное Exception.
-    """
+    """If random<0.3 → the original Exception is thrown."""
     with pytest.raises(Exception) as exc:
         task_2.run(value=100)
-    assert "Случайная ошибка в task2" in str(exc.value)
+    assert "Accidental error in task2" in str(exc.value)
