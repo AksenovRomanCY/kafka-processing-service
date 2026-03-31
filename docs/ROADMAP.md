@@ -214,11 +214,11 @@ Document architectural decisions and security scope.
 
 ---
 
-## Phase 7: Infrastructure (L2, L3, L4)
+## ~~Phase 7: Infrastructure (L2, L3, L4)~~ DONE ✅
 
 Modernize Docker setup, migrate Kafka to KRaft, add graceful shutdown.
 
-### 7.1 Migrate Kafka to KRaft mode (remove Zookeeper)
+### ~~7.1 Migrate Kafka to KRaft mode (remove Zookeeper)~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -230,7 +230,7 @@ Modernize Docker setup, migrate Kafka to KRaft, add graceful shutdown.
 | UPDATE | `docker-compose.yml` | Remove `depends_on: zookeeper` from kafka service |
 | UPDATE | `docker-compose.yml` | Remove `depends_on: init-kafka-topics` from consumer (if topics auto-created by KRaft config) |
 
-### 7.2 Improve Dockerfile
+### ~~7.2 Improve Dockerfile~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -238,7 +238,7 @@ Modernize Docker setup, migrate Kafka to KRaft, add graceful shutdown.
 | ADD | `Dockerfile` | `HEALTHCHECK` instruction (liveness file touch or HTTP ping) |
 | UPDATE | `Dockerfile` | Pin to specific patch version: `python:3.13.x-slim` |
 
-### 7.3 Add graceful shutdown to consumer
+### ~~7.3 Add graceful shutdown to consumer~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -247,13 +247,13 @@ Modernize Docker setup, migrate Kafka to KRaft, add graceful shutdown.
 | UPDATE | `app/kafka/consumer.py` | Replace bare `async for msg in consumer` with a loop that checks `stop_event.is_set()` |
 | ADD | `app/kafka/consumer.py` | Log clean shutdown message on exit |
 
-### 7.4 Update Redis image
+### ~~7.4 Update Redis image~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | UPDATE | `docker-compose.yml` | `redis:7` -> `redis:8` |
 
-### Commit: `infra: migrate Kafka to KRaft, upgrade images, add graceful shutdown`
+### ~~Commit: `infra: migrate Kafka to KRaft, upgrade images, add graceful shutdown`~~ ✅
 
 ---
 

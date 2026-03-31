@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import signal
 
 from aiokafka import AIOKafkaConsumer
 
@@ -50,9 +51,15 @@ async def consume():
 
     Creates and starts a persistent AIOKafkaProducer and an AIOKafkaConsumer,
     iterates over incoming messages, delegates each message to `handle_message`,
-    and commits offsets manually. Ensures graceful shutdown of both consumer
-    and producer on exit.
+    and commits offsets manually. Handles SIGTERM/SIGINT for graceful shutdown.
+    Ensures cleanup of both consumer and producer on exit.
     """
+    stop_event = asyncio.Event()
+    loop = asyncio.get_running_loop()
+
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(sig, stop_event.set)
+
     await start_producer()
 
     consumer = AIOKafkaConsumer(
@@ -78,6 +85,10 @@ async def consume():
         # task acknowledges completion (e.g. task_acks_late=True) and
         # make consumers idempotent to handle duplicates.
         async for msg in consumer:
+            if stop_event.is_set():
+                logger.info("Shutdown signal received, stopping consumer")
+                break
+
             raw_value = msg.value
             logger.info("Message received: %s", raw_value)
 
@@ -87,6 +98,7 @@ async def consume():
     finally:
         await consumer.stop()
         await stop_producer()
+        logger.info("Consumer shut down cleanly")
 
 
 if __name__ == "__main__":  # pragma: no cover

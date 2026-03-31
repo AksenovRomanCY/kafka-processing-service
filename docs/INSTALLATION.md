@@ -3,7 +3,7 @@
 ## 📋 Preliminary requirements
 
 - Docker & Docker Compose
-- (Optional) Python 3.12 and pip for local development
+- (Optional) Python 3.13 and pip for local development
 
 ## 📦 Cloning and customization
 
@@ -22,7 +22,7 @@ docker-compose up -d --build
 ```
 
 It will be launched:
-- Kafka + Zookeeper
+- Kafka (KRaft mode)
 - Redis
 - Consumer
 - Celery Worker

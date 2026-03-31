@@ -65,7 +65,6 @@ This is a **development-only** setup. No authentication or encryption is configu
 **Current state:**
 - Kafka: plaintext listener, no SASL/SSL (`ALLOW_PLAINTEXT_LISTENER=yes`)
 - Redis: no password by default (configurable via `REDIS_PASSWORD` env var)
-- Zookeeper: anonymous login enabled (`ALLOW_ANONYMOUS_LOGIN=yes`)
 - All inter-service traffic is unencrypted
 
 **For production deployment, the following would be required:**
@@ -73,4 +72,3 @@ This is a **development-only** setup. No authentication or encryption is configu
 - Redis: password authentication (`requirepass`) + TLS connections
 - Secrets management: use a vault (HashiCorp Vault, AWS Secrets Manager) instead of plain `.env` files
 - Network isolation: place services in a private network, restrict exposed ports
-- Zookeeper removal: migrate to KRaft mode (planned in Phase 7) to eliminate one attack surface
