@@ -8,7 +8,7 @@ TOPICS=("$KAFKA_INPUT_TOPIC" "$KAFKA_OUTPUT_TOPIC" "$KAFKA_ERROR_TOPIC")
 
 for TOPIC in "${TOPICS[@]}"; do
   echo "🔧 Creating topic: $TOPIC"
-  kafka-topics.sh \
+  /opt/kafka/bin/kafka-topics.sh \
     --bootstrap-server "${BOOTSTRAP_SERVER:-kafka:9092}" \
     --create \
     --if-not-exists \
