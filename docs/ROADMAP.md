@@ -335,16 +335,16 @@ Each phase is an independent commit. Phases can be merged into a single release 
 
 ---
 
-## Release Checklist (v2.0.0)
+## Release Checklist (v2.0.0) DONE ✅
 
-- [ ] All 8 phases committed and tested
-- [ ] `pytest` passes with 100% of previous + new tests
-- [ ] `docker compose up -d` starts all services healthy
-- [ ] End-to-end test: message in `input` -> result in `output`
-- [ ] `docker compose logs` shows structured log output
-- [ ] No `print()` remaining in `app/`
-- [ ] No `import random` in production code
-- [ ] No Zookeeper service in docker-compose
-- [ ] Python 3.13 in Dockerfile
-- [ ] All deps pinned in both requirements files
-- [ ] Tag `v2.0.0`, create GitHub release
+- [x] All 8 phases committed and tested
+- [x] `pytest` passes with 100% of previous + new tests
+- [x] `docker compose up -d` starts all services healthy
+- [x] End-to-end test: message in `input` -> result in `output`
+- [x] `docker compose logs` shows structured log output
+- [x] No `print()` remaining in `app/`
+- [x] No `import random` in production code
+- [x] No Zookeeper service in docker-compose
+- [x] Python 3.13 in Dockerfile
+- [x] All deps pinned in both requirements files
+- [x] Tag `v2.0.0`, create GitHub release
