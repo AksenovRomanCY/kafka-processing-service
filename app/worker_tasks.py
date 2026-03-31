@@ -1,9 +1,12 @@
 import asyncio
+import logging
 import random
 
 from app.celery_app import celery_app
 from app.kafka.producer import send_to_kafka
 from app.settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task(
@@ -42,14 +45,14 @@ def task_1(self, value: float):  # noqa
     Returns:
         celery.result.AsyncResult: The AsyncResult for the enqueued `task_2` task.
     """
-    print(f"[Task1] Received: {value}")
+    logger.info("Received: %s", value)
 
     # Simulate a random failure to trigger retry behavior
     if random.random() < 0.3:
         raise Exception("Accidental error in task1")
 
     new_value = value + 100
-    print(f"[Task1] After +100: {new_value}")
+    logger.info("After +100: %s", new_value)
 
     task_2.delay(new_value)
 
@@ -74,14 +77,14 @@ def task_2(self, value: float):  # noqa
     Returns:
         Any: The result of the `send_to_kafka` coroutine execution.
     """
-    print(f"[Task2] Received: {value}")
+    logger.info("Received: %s", value)
 
     # Simulate a random failure to trigger retry behavior
     if random.random() < 0.3:
         raise Exception("Accidental error in task2")
 
     result = value - 1000
-    print(f"[Task2] After -1000: {result}")
+    logger.info("After -1000: %s", result)
 
     # Send to Kafka asynchronously
     send_kafka_task.delay(result)

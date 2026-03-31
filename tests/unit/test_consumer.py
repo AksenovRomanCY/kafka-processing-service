@@ -1,4 +1,5 @@
 import json
+import logging
 
 import pytest  # noqa
 
@@ -19,18 +20,17 @@ class DummyTask:
 
 
 @pytest.mark.asyncio
-async def test_handle_message_valid(monkeypatch, capsys):
+async def test_handle_message_valid(monkeypatch, caplog):
     monkeypatch.setattr(task_1, "delay", DummyTask.delay)
-    await handle_message(json.dumps({"value": 42}))
+    with caplog.at_level(logging.INFO):
+        await handle_message(json.dumps({"value": 42}))
 
-    out = capsys.readouterr().out
-    assert "[Kafka] Valid value: 42" in out
-    assert "Celery task_1 started with ID: dummy-id" in out
+    assert "Valid value: 42" in caplog.text
+    assert "Celery task_1 started with ID: dummy-id" in caplog.text
 
 
 @pytest.mark.asyncio
-async def test_handle_message_invalid(monkeypatch, capsys):
-    # Locally spoof send_to_kafka to catch its call
+async def test_handle_message_invalid(monkeypatch, caplog):
     sent = {}
 
     async def fake_send(topic, data):
@@ -40,17 +40,16 @@ async def test_handle_message_invalid(monkeypatch, capsys):
     monkeypatch.setattr("app.kafka.consumer.send_to_kafka", fake_send)
 
     bad = "not-a-json"
-    await handle_message(bad)
+    with caplog.at_level(logging.ERROR):
+        await handle_message(bad)
 
-    out = capsys.readouterr().out
-    assert "[Kafka][Error] Invalid message: not-a-json" in out
-    # Let's make sure it's in the error-topic.
+    assert "Invalid message: not-a-json" in caplog.text
     assert sent["topic"] == settings.KAFKA_ERROR_TOPIC
     assert sent["data"] == {"error": bad}
 
 
 @pytest.mark.asyncio
-async def test_handle_message_missing_value(monkeypatch, capsys):
+async def test_handle_message_missing_value(monkeypatch, caplog):
     """If there is no 'value' field in JSON, or it is None - error and send to error."""
     sent = {}
 
@@ -58,26 +57,26 @@ async def test_handle_message_missing_value(monkeypatch, capsys):
         sent["topic"] = topic
         sent["data"] = data
 
-    # Patch sending to Kafka
     monkeypatch.setattr("app.kafka.consumer.send_to_kafka", fake_send)
 
     # Empty object
-    await handle_message(json.dumps({}))
-    out = capsys.readouterr().out
-    assert "[Kafka][Error] Invalid message" in out
+    with caplog.at_level(logging.ERROR):
+        await handle_message(json.dumps({}))
+    assert "Invalid message" in caplog.text
     assert sent["topic"] == settings.KAFKA_ERROR_TOPIC
     assert sent["data"] == {"error": "{}"}
 
     # Clearly null
     sent.clear()
-    await handle_message(json.dumps({"value": None}))
-    out = capsys.readouterr().out
-    assert "[Kafka][Error] Invalid message" in out
+    caplog.clear()
+    with caplog.at_level(logging.ERROR):
+        await handle_message(json.dumps({"value": None}))
+    assert "Invalid message" in caplog.text
     assert sent["data"] == {"error": '{"value": null}'}
 
 
 @pytest.mark.asyncio
-async def test_handle_message_non_numeric_value(monkeypatch, capsys):
+async def test_handle_message_non_numeric_value(monkeypatch, caplog):
     """If the 'value' field is not a number - also an error."""
     sent = {}
 
@@ -87,21 +86,21 @@ async def test_handle_message_non_numeric_value(monkeypatch, capsys):
 
     monkeypatch.setattr("app.kafka.consumer.send_to_kafka", fake_send)
 
-    # A string instead of a number
     bad = json.dumps({"value": "foo"})
-    await handle_message(bad)
-    out = capsys.readouterr().out
-    assert "[Kafka][Error] Invalid message" in out
+    with caplog.at_level(logging.ERROR):
+        await handle_message(bad)
+    assert "Invalid message" in caplog.text
     assert sent["data"] == {"error": bad}
 
 
 @pytest.mark.asyncio
-async def test_handle_message_float_and_negative(monkeypatch, capsys):
+async def test_handle_message_float_and_negative(monkeypatch, caplog):
     """Correct float and negative numbers are valid and go into task_1."""
     monkeypatch.setattr(task_1, "delay", DummyTask.delay)
 
     for val in [3.14, -1000.5]:
-        await handle_message(json.dumps({"value": val}))
-        out = capsys.readouterr().out
-        assert f"[Kafka] Valid value: {val}" in out
-        assert "Celery task_1 started with ID: dummy-id" in out
+        caplog.clear()
+        with caplog.at_level(logging.INFO):
+            await handle_message(json.dumps({"value": val}))
+        assert f"Valid value: {val}" in caplog.text
+        assert "Celery task_1 started with ID: dummy-id" in caplog.text

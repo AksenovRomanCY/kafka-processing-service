@@ -1,5 +1,6 @@
 from celery import Celery
 
+import app.logging_config  # noqa: F401
 from app.settings import settings
 
 # Instantiate a Celery application

@@ -1,11 +1,15 @@
 import asyncio
 import json
+import logging
 
 from aiokafka import AIOKafkaConsumer
 
+import app.logging_config  # noqa: F401
 from app.kafka.producer import send_to_kafka
 from app.settings import settings
 from app.worker_tasks import task_1
+
+logger = logging.getLogger(__name__)
 
 
 async def handle_message(raw_value: str) -> None:
@@ -28,13 +32,13 @@ async def handle_message(raw_value: str) -> None:
         if not isinstance(number, (int, float)):
             raise ValueError("The 'value' field is missing or not a number")
 
-        print(f"[Kafka] Valid value: {number}")
+        logger.info("Valid value: %s", number)
 
         res = task_1.delay(number)
-        print(f"[Kafka] Celery task_1 started with ID: {res.id}")
+        logger.info("Celery task_1 started with ID: %s", res.id)
 
     except Exception as e:
-        print(f"[Kafka][Error] Invalid message: {raw_value} — {e}")
+        logger.error("Invalid message: %s — %s", raw_value, e)
         await send_to_kafka(
             topic=settings.KAFKA_ERROR_TOPIC,
             data={"error": raw_value},
@@ -61,7 +65,7 @@ async def consume():
     try:
         async for msg in consumer:
             raw_value = msg.value
-            print(f"[Kafka] Message received: {raw_value}")
+            logger.info("Message received: %s", raw_value)
 
             await handle_message(raw_value)
 

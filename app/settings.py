@@ -24,6 +24,8 @@ class Settings(BaseSettings):
 
     CELERY_MAX_RETRIES: int = 3
 
+    LOG_LEVEL: str = "INFO"
+
 
 # Instantiate the settings object, loading any overrides from the environment.
 settings = Settings()

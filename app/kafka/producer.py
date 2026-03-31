@@ -1,8 +1,11 @@
 import json
+import logging
 
 from aiokafka import AIOKafkaProducer
 
 from app.settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 async def send_to_kafka(topic: str, data: dict):
@@ -26,6 +29,6 @@ async def send_to_kafka(topic: str, data: dict):
     await producer.start()
     try:
         await producer.send_and_wait(topic, data)
-        print(f"[Kafka] Posted in Topic `{topic}`: {data}")
+        logger.info("Posted in Topic '%s': %s", topic, data)
     finally:
         await producer.stop()
