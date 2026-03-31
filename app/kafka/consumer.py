@@ -66,13 +66,22 @@ async def consume():
     await consumer.start()
 
     try:
+        # At-most-once delivery: the offset is committed right after
+        # handle_message() enqueues a Celery task, NOT after the worker
+        # finishes executing it.  If the worker crashes before the task
+        # runs, the message will not be redelivered.
+        #
+        # This is a deliberate trade-off: simpler flow and lower latency
+        # at the cost of potential message loss under worker failure.
+        #
+        # For at-least-once semantics, commit the offset only after the
+        # task acknowledges completion (e.g. task_acks_late=True) and
+        # make consumers idempotent to handle duplicates.
         async for msg in consumer:
             raw_value = msg.value
             logger.info("Message received: %s", raw_value)
 
             await handle_message(raw_value)
-
-            # Commit offset after processing
             await consumer.commit()
 
     finally:

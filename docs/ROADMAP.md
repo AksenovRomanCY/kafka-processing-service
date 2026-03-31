@@ -187,30 +187,30 @@ Cover untested modules and paths.
 
 ---
 
-## Phase 6: Documentation (M3, L5)
+## ~~Phase 6: Documentation (M3, L5)~~ DONE ✅
 
 Document architectural decisions and security scope.
 
-### 6.1 Delivery semantics
+### ~~6.1 Delivery semantics~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | ADD | `app/kafka/consumer.py:66` | Comment block explaining at-most-once delivery semantics and the conscious trade-off |
 | UPDATE | `docs/ARCHITECTURE.md` | Section "Delivery Guarantees": explain that offset is committed after enqueue, not after task completion |
 
-### 6.2 Security scope
+### ~~6.2 Security scope~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | UPDATE | `docs/ARCHITECTURE.md` | Section "Security": state this is a dev-only setup, no auth/TLS. List what would be needed for production |
 
-### 6.3 Environment setup
+### ~~6.3 Environment setup~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | UPDATE | `docs/INSTALLATION.md` | Document `.env.example` -> `.env` copy step, explain each variable |
 
-### Commit: `docs: document delivery semantics, security scope, env setup`
+### ~~Commit: `docs: document delivery semantics, security scope, env setup`~~ ✅
 
 ---
 
