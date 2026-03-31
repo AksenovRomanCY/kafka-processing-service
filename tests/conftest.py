@@ -1,5 +1,3 @@
-import random
-
 import pytest  # noqa
 
 from app.celery_app import celery_app
@@ -24,15 +22,3 @@ def patch_send_to_kafka(monkeypatch):
     monkeypatch.setattr("app.kafka.producer.send_to_kafka", dummy_send)
     monkeypatch.setattr("app.worker_tasks.send_to_kafka", dummy_send)
     monkeypatch.setattr("app.kafka.consumer.send_to_kafka", dummy_send)
-
-
-@pytest.fixture
-def random_success(monkeypatch):
-    """Determine random.random() → always 0.5 (success)."""
-    monkeypatch.setattr(random, "random", lambda: 0.5)
-
-
-@pytest.fixture
-def random_fail(monkeypatch):
-    """Determine random.random() → always 0.0 (error)."""
-    monkeypatch.setattr(random, "random", lambda: 0.0)

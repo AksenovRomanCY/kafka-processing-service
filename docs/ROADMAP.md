@@ -5,11 +5,11 @@ Baseline: tag `v1.0.0` (commit `dc3d76b`).
 
 ---
 
-## Phase 1: Logging (H3, M1)
+## ~~Phase 1: Logging (H3, M1)~~ DONE ✅ `7ae64c7`
 
 Replace all `print()` with structured `logging`. Update tests accordingly.
 
-### 1.1 Add logging configuration
+### ~~1.1 Add logging configuration~~ ✅
 
 | Action | Details |
 |---|---|
@@ -21,7 +21,7 @@ Replace all `print()` with structured `logging`. Update tests accordingly.
 - Add LOG_LEVEL: str = "INFO" to Settings
 ```
 
-### 1.2 Replace print() -> logger
+### ~~1.2 Replace print() -> logger~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -35,7 +35,7 @@ Replace all `print()` with structured `logging`. Update tests accordingly.
 | REPLACE | `app/worker_tasks.py:84` | `print(f"[Task2] After -1000: ...")` -> `logger.info(...)` |
 | REPLACE | `app/kafka/producer.py:29` | `print(f"[Kafka] Posted in ...")` -> `logger.info(...)` |
 
-### 1.3 Update tests (M1)
+### ~~1.3 Update tests (M1)~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -43,15 +43,15 @@ Replace all `print()` with structured `logging`. Update tests accordingly.
 | REMOVE | All tests | Dependency on exact print string format |
 | KEEP | All tests | Behavioral assertions (`sent["topic"]`, `task_1.delay` calls) |
 
-### Commit: `refactor: replace print() with structured logging`
+### ~~Commit: `refactor: replace print() with structured logging`~~ ✅
 
 ---
 
-## Phase 2: Error Handling (M2)
+## ~~Phase 2: Error Handling (M2)~~ DONE ✅
 
 Remove simulated failures from production code. Narrow retry scope.
 
-### 2.1 Create custom exception
+### ~~2.1 Create custom exception~~ ✅
 
 | Action | Details |
 |---|---|
@@ -62,7 +62,7 @@ class TransientProcessingError(Exception):
     """Retryable transient error in task processing."""
 ```
 
-### 2.2 Clean up worker tasks
+### ~~2.2 Clean up worker tasks~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -71,7 +71,7 @@ class TransientProcessingError(Exception):
 | REMOVE | `app/worker_tasks.py:1` | `import random` (no longer needed) |
 | REPLACE | `app/worker_tasks.py` | `autoretry_for=(Exception,)` -> `autoretry_for=(TransientProcessingError,)` in all 3 tasks |
 
-### 2.3 Update tests
+### ~~2.3 Update tests~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -80,7 +80,7 @@ class TransientProcessingError(Exception):
 | REMOVE | `tests/conftest.py` | `import random` |
 | UPDATE | `tests/unit/test_worker_tasks.py` | Remove `@pytest.mark.usefixtures("random_success")` from remaining tests |
 
-### Commit: `refactor: remove simulated failures, narrow retry scope to TransientProcessingError`
+### ~~Commit: `refactor: remove simulated failures, narrow retry scope to TransientProcessingError`~~ ✅
 
 ---
 
