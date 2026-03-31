@@ -159,11 +159,11 @@ Eliminate per-message connection overhead. Remove async/sync mixing.
 
 ---
 
-## Phase 5: Test Coverage (M5, L1)
+## ~~Phase 5: Test Coverage (M5, L1)~~ DONE ✅
 
 Cover untested modules and paths.
 
-### 5.1 Producer tests
+### ~~5.1 Producer tests~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -171,19 +171,19 @@ Cover untested modules and paths.
 | ADD | `tests/unit/test_producer.py` | Test producer `stop()` called in `finally` even on exception |
 | ADD | `tests/unit/test_producer.py` | Test JSON serialization of data |
 
-### 5.2 Sync producer tests
+### ~~5.2 Sync producer tests~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | CREATE | `tests/unit/test_sync_producer.py` | Test `sync_send_to_kafka`: mock `KafkaProducer`, verify `send` called correctly |
 
-### 5.3 Consumer loop tests
+### ~~5.3 Consumer loop tests~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | ADD | `tests/unit/test_consumer.py` | Test `consume()`: mock `AIOKafkaConsumer` to yield messages, verify `handle_message` called, `commit()` called after each, `stop()` called on exit |
 
-### Commit: `test: add coverage for producer module and consume() loop`
+### ~~Commit: `test: add coverage for producer module and consume() loop`~~ ✅
 
 ---
 
