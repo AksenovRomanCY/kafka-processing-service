@@ -58,7 +58,7 @@ async def consume():
         value_deserializer=lambda m: m.decode("utf-8"),
         auto_offset_reset="earliest",
         enable_auto_commit=False,
-        group_id="kafka-handler-group",
+        group_id=settings.KAFKA_GROUP_ID,
     )
     await consumer.start()
 

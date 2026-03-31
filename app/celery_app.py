@@ -13,6 +13,6 @@ celery_app = Celery(
 # Update the Celery configuration
 celery_app.conf.update(
     task_track_started=True,
-    task_time_limit=300,
+    task_time_limit=settings.CELERY_TASK_TIME_LIMIT,
     result_backend=None,
 )

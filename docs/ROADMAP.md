@@ -84,11 +84,11 @@ class TransientProcessingError(Exception):
 
 ---
 
-## Phase 3: Settings & Configuration (M4)
+## ~~Phase 3: Settings & Configuration (M4)~~ DONE ✅
 
 Expand, validate, and centralize all configuration.
 
-### 3.1 Extend Settings class
+### ~~3.1 Extend Settings class~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -99,7 +99,7 @@ Expand, validate, and centralize all configuration.
 | ADD | `app/settings.py` | Pydantic `field_validator` for `REDIS_PORT` (range 1-65535) |
 | UPDATE | `app/settings.py` | `REDIS_BROKER_URL` property: include password when set (`redis://:pass@host:port/0`) |
 
-### 3.2 Use settings in code (remove hardcoded values)
+### ~~3.2 Use settings in code (remove hardcoded values)~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -107,13 +107,13 @@ Expand, validate, and centralize all configuration.
 | REPLACE | `app/celery_app.py:15` | `task_time_limit=300` -> `task_time_limit=settings.CELERY_TASK_TIME_LIMIT` |
 | REPLACE | `app/logging_config.py` | Use `settings.LOG_LEVEL` for configuring log level |
 
-### 3.3 Environment template
+### ~~3.3 Environment template~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | UPDATE | `.env.example` | Add all new variables with comments and defaults |
 
-### Commit: `feat: centralize configuration, add validation and new settings`
+### ~~Commit: `feat: centralize configuration, add validation and new settings`~~ ✅
 
 ---
 
