@@ -1,9 +1,10 @@
-import asyncio
+from __future__ import annotations
+
 import logging
 
 from app.celery_app import celery_app
 from app.exceptions import TransientProcessingError
-from app.kafka.producer import send_to_kafka
+from app.kafka.sync_producer import sync_send_to_kafka
 from app.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -16,12 +17,14 @@ logger = logging.getLogger(__name__)
     max_retries=settings.CELERY_MAX_RETRIES,
 )
 def send_kafka_task(self, result: float):
-    """Asynchronously sends data to Kafka without blocking the calling shuffle."""
-    return asyncio.run(
-        send_to_kafka(
-            topic=settings.KAFKA_OUTPUT_TOPIC,
-            data={"result": result},
-        )
+    """Send computed result to the Kafka output topic.
+
+    Uses a synchronous KafkaProducer singleton to avoid event loop
+    creation overhead in the Celery worker process.
+    """
+    sync_send_to_kafka(
+        topic=settings.KAFKA_OUTPUT_TOPIC,
+        data={"result": result},
     )
 
 

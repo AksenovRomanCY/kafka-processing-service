@@ -5,7 +5,7 @@ import logging
 from aiokafka import AIOKafkaConsumer
 
 import app.logging_config  # noqa: F401
-from app.kafka.producer import send_to_kafka
+from app.kafka.producer import send_to_kafka, start_producer, stop_producer
 from app.settings import settings
 from app.worker_tasks import task_1
 
@@ -48,10 +48,13 @@ async def handle_message(raw_value: str) -> None:
 async def consume():
     """Consume messages from Kafka input topic and process them.
 
-    Creates and starts an AIOKafkaConsumer, iterates over incoming messages,
-    delegates each message to `handle_message`, and commits offsets manually.
-    Ensures graceful shutdown of the consumer on exit.
+    Creates and starts a persistent AIOKafkaProducer and an AIOKafkaConsumer,
+    iterates over incoming messages, delegates each message to `handle_message`,
+    and commits offsets manually. Ensures graceful shutdown of both consumer
+    and producer on exit.
     """
+    await start_producer()
+
     consumer = AIOKafkaConsumer(
         settings.KAFKA_INPUT_TOPIC,
         bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
@@ -74,6 +77,7 @@ async def consume():
 
     finally:
         await consumer.stop()
+        await stop_producer()
 
 
 if __name__ == "__main__":  # pragma: no cover

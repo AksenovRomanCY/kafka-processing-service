@@ -117,24 +117,24 @@ Expand, validate, and centralize all configuration.
 
 ---
 
-## Phase 4: Producer Refactor (H1, H2)
+## ~~Phase 4: Producer Refactor (H1, H2)~~ DONE ✅
 
 Eliminate per-message connection overhead. Remove async/sync mixing.
 
-### 4.1 Split producer into async and sync implementations
+### ~~4.1 Split producer into async and sync implementations~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | REWRITE | `app/kafka/producer.py` | Persistent async producer: init once, reuse. Functions: `start_producer()`, `stop_producer()`, `send_to_kafka()` |
 | CREATE | `app/kafka/sync_producer.py` | Sync producer using `kafka-python` library: module-level `KafkaProducer` singleton, `sync_send_to_kafka(topic, data)` |
 
-### 4.2 Update consumer to manage producer lifecycle
+### ~~4.2 Update consumer to manage producer lifecycle~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | UPDATE | `app/kafka/consumer.py` | Call `start_producer()` before consumer loop, `stop_producer()` in `finally` block |
 
-### 4.3 Update worker tasks to use sync producer
+### ~~4.3 Update worker tasks to use sync producer~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -142,20 +142,20 @@ Eliminate per-message connection overhead. Remove async/sync mixing.
 | REMOVE | `app/worker_tasks.py` | `import asyncio` (no longer needed) |
 | REMOVE | `app/worker_tasks.py` | Import of async `send_to_kafka` |
 
-### 4.4 Update dependencies
+### ~~4.4 Update dependencies~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | ADD | `requirements.txt` | `kafka-python-ng` (maintained fork of `kafka-python`) |
 
-### 4.5 Update tests
+### ~~4.5 Update tests~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | UPDATE | `tests/conftest.py` | Patch `sync_send_to_kafka` instead of `send_to_kafka` in worker context |
 | UPDATE | `tests/unit/test_worker_tasks.py` | Adapt `test_send_kafka_task_invokes_coroutine` for sync producer |
 
-### Commit: `refactor: persistent async producer for consumer, sync producer for worker`
+### ~~Commit: `refactor: persistent async producer for consumer, sync producer for worker`~~ ✅
 
 ---
 

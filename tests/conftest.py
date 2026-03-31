@@ -1,4 +1,6 @@
-import pytest  # noqa
+from __future__ import annotations
+
+import pytest
 
 from app.celery_app import celery_app
 
@@ -11,14 +13,22 @@ def celery_eager():
 
 
 @pytest.fixture(autouse=True)
-def patch_send_to_kafka(monkeypatch):
-    """Replace all calls to send_to_kafka with a stub.
-    So that there would be no need to connect anywhere during unit tests.
+def patch_kafka_producers(monkeypatch):
+    """Replace all Kafka producer calls with stubs.
+
+    Patches both the async producer (used by consumer) and the sync
+    producer (used by worker tasks) so tests run without a Kafka broker.
     """
 
-    async def dummy_send(topic: str, data: dict):  # noqa
+    async def dummy_async_send(topic: str, data: dict) -> None:
         return None
 
-    monkeypatch.setattr("app.kafka.producer.send_to_kafka", dummy_send)
-    monkeypatch.setattr("app.worker_tasks.send_to_kafka", dummy_send)
-    monkeypatch.setattr("app.kafka.consumer.send_to_kafka", dummy_send)
+    def dummy_sync_send(topic: str, data: dict) -> None:
+        return None
+
+    # Async producer used by consumer's handle_message
+    monkeypatch.setattr("app.kafka.producer.send_to_kafka", dummy_async_send)
+    monkeypatch.setattr("app.kafka.consumer.send_to_kafka", dummy_async_send)
+
+    # Sync producer used by worker tasks
+    monkeypatch.setattr("app.worker_tasks.sync_send_to_kafka", dummy_sync_send)

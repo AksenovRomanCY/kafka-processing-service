@@ -32,15 +32,15 @@ def test_task_2_success(monkeypatch):
     assert called["result"] == -800
 
 
-def test_send_kafka_task_invokes_coroutine(monkeypatch):
-    """send_kafka_task.run should call send_to_kafka(topic, {'result': result}) via asyncio."""
+def test_send_kafka_task_calls_sync_producer(monkeypatch):
+    """send_kafka_task.run should call sync_send_to_kafka with topic and result data."""
     sent = {}
 
-    async def fake_send(topic, data):
+    def fake_sync_send(topic, data):
         sent["topic"] = topic
         sent["data"] = data
 
-    monkeypatch.setattr("app.worker_tasks.send_to_kafka", fake_send)
+    monkeypatch.setattr("app.worker_tasks.sync_send_to_kafka", fake_sync_send)
 
     send_kafka_task.run(result=123.45)
     assert sent["topic"] == settings.KAFKA_OUTPUT_TOPIC
