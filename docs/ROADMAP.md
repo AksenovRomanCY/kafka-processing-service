@@ -257,17 +257,17 @@ Modernize Docker setup, migrate Kafka to KRaft, add graceful shutdown.
 
 ---
 
-## Phase 8: Dependency Update & Python Upgrade
+## ~~Phase 8: Dependency Update & Python Upgrade~~ DONE ✅
 
 Update all packages and base image to latest compatible versions.
 
-### 8.1 Python upgrade
+### ~~8.1 Python upgrade~~ ✅
 
 | Action | File | What |
 |---|---|---|
 | UPDATE | `Dockerfile` | `python:3.12-slim` -> `python:3.13-slim` (done in Phase 7 if merged, otherwise here) |
 
-### 8.2 Update requirements.txt
+### ~~8.2 Update requirements.txt~~ ✅
 
 | Action | Package | From | To |
 |---|---|---|---|
@@ -289,7 +289,7 @@ Update all packages and base image to latest compatible versions.
 | REMOVE | async-timeout | 5.0.1 | (transitive, remove from direct deps) |
 | ADD | kafka-python-ng | — | latest (added in Phase 4) |
 
-### 8.3 Pin dev dependencies
+### ~~8.3 Pin dev dependencies~~ ✅
 
 | Action | File | What |
 |---|---|---|
@@ -303,7 +303,7 @@ pytest==9.0.2
 pytest-asyncio==1.3.0
 ```
 
-### 8.4 Verification
+### ~~8.4 Verification~~ ✅
 
 | Step | Command | Expected |
 |---|---|---|
@@ -314,7 +314,7 @@ pytest-asyncio==1.3.0
 | 5 | `docker compose up -d` | All services start and show healthy |
 | 6 | Send test message to `input` topic | Result appears on `output` topic |
 
-### Commit: `chore: update all dependencies, upgrade to Python 3.13`
+### ~~Commit: `chore: update all dependencies, upgrade to Python 3.13`~~ ✅
 
 ---
 
