@@ -5,8 +5,8 @@
 ### Launch:
 
 ```bash
-pytest
-````
+poetry run pytest
+```
 
 ### What's covered:
 

@@ -3,7 +3,7 @@
 ## 📋 Preliminary requirements
 
 - Docker & Docker Compose
-- (Optional) Python 3.13 and pip for local development
+- (Optional) Python 3.13 and [Poetry](https://python-poetry.org/) for local development
 
 ## 📦 Cloning and customization
 
@@ -59,7 +59,7 @@ All configuration is done via `.env` file (copied from `.env.example`).
 
 ## Developing
 
-Before development and testing, you must be sure to establish development dependencies.
+Install all dependencies (including dev tools) via Poetry:
 ```bash
-pip3 install -r requirements.dev.txt
+poetry install
 ```

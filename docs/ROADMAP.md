@@ -87,7 +87,7 @@ Migrate from black+isort to ruff. Add mypy strict. Fix missing `from __future__ 
 
 ---
 
-## Phase 3: Poetry Migration
+## Phase 3: Poetry Migration ✅
 
 Replace `requirements.txt` / `requirements.dev.txt` with Poetry. Separate direct dependencies from transitive ones.
 
