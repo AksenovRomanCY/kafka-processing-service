@@ -1,4 +1,6 @@
-import pytest  # noqa
+from __future__ import annotations
+
+import pytest  # noqa: F401
 
 from app.settings import settings
 from app.worker_tasks import send_kafka_task, task_1, task_2

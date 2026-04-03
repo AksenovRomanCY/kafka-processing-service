@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from typing import Any
 
 from kafka import KafkaProducer
 
@@ -28,7 +29,7 @@ def _get_producer() -> KafkaProducer:
     return _producer
 
 
-def sync_send_to_kafka(topic: str, data: dict) -> None:
+def sync_send_to_kafka(topic: str, data: dict[str, Any]) -> None:
     """Synchronously send a JSON-encoded message to a Kafka topic.
 
     Uses a persistent KafkaProducer singleton. Intended for use in

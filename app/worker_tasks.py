@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from app.celery_app import celery_app
 from app.exceptions import TransientProcessingError
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
     retry_backoff=True,
     max_retries=settings.CELERY_MAX_RETRIES,
 )
-def send_kafka_task(self, result: float):
+def send_kafka_task(self: Any, result: float) -> None:
     """Send computed result to the Kafka output topic.
 
     Uses a synchronous KafkaProducer singleton to avoid event loop
@@ -34,7 +35,7 @@ def send_kafka_task(self, result: float):
     retry_backoff=True,
     max_retries=settings.CELERY_MAX_RETRIES,
 )
-def task_1(self, value: float):  # noqa
+def task_1(self: Any, value: float) -> None:
     """Process the input value by adding 100 and scheduling the next task.
 
     Logs the received value for traceability, increments it by 100,
@@ -58,7 +59,7 @@ def task_1(self, value: float):  # noqa
     retry_backoff=True,
     max_retries=settings.CELERY_MAX_RETRIES,
 )
-def task_2(self, value: float):  # noqa
+def task_2(self: Any, value: float) -> None:
     """Process the input value by subtracting 1000 and sending the result to Kafka.
 
     Logs the received value, applies a subtraction of 1000, and publishes

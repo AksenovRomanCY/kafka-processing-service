@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -46,7 +48,7 @@ async def handle_message(raw_value: str) -> None:
         )
 
 
-async def consume():
+async def consume() -> None:
     """Consume messages from Kafka input topic and process them.
 
     Creates and starts a persistent AIOKafkaProducer and an AIOKafkaConsumer,

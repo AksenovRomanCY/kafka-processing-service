@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from celery import Celery
 
 import app.logging_config  # noqa: F401

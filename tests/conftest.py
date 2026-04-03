@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from app.celery_app import celery_app
@@ -20,10 +22,10 @@ def patch_kafka_producers(monkeypatch):
     producer (used by worker tasks) so tests run without a Kafka broker.
     """
 
-    async def dummy_async_send(topic: str, data: dict) -> None:
+    async def dummy_async_send(topic: str, data: dict[str, Any]) -> None:
         return None
 
-    def dummy_sync_send(topic: str, data: dict) -> None:
+    def dummy_sync_send(topic: str, data: dict[str, Any]) -> None:
         return None
 
     # Async producer used by consumer's handle_message

@@ -39,7 +39,7 @@ No code changes required: both packages use the same module name `kafka`, so all
 
 ---
 
-## Phase 2: Linting & Type Checking
+## Phase 2: Linting & Type Checking ✅
 
 Migrate from black+isort to ruff. Add mypy strict. Fix missing `from __future__ import annotations`.
 

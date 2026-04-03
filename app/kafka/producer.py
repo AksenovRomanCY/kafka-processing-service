@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from typing import Any
 
 from aiokafka import AIOKafkaProducer
 
@@ -47,7 +48,7 @@ async def stop_producer() -> None:
     logger.info("Async Kafka producer stopped")
 
 
-async def send_to_kafka(topic: str, data: dict) -> None:
+async def send_to_kafka(topic: str, data: dict[str, Any]) -> None:
     """Send a JSON-encoded message to a Kafka topic using the persistent producer.
 
     Args:
