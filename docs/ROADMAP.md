@@ -129,7 +129,7 @@ Replace `requirements.txt` / `requirements.dev.txt` with Poetry. Separate direct
 
 ---
 
-## Phase 4: CI/CD
+## Phase 4: CI/CD ✅
 
 Add GitHub Actions workflow: lint, typecheck, test, build.
 

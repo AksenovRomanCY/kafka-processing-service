@@ -1,4 +1,6 @@
 <!-- README.md -->
+[![CI](https://github.com/AksenovRomanCY/kafka-processing-service/actions/workflows/ci.yml/badge.svg)](https://github.com/AksenovRomanCY/kafka-processing-service/actions/workflows/ci.yml)
+
 # Kafka Processing Service
 
 The application simulates the background processing of tasks:
