@@ -5,7 +5,7 @@ Baseline: tag `v2.0.0` (commit `a013abe`).
 
 ---
 
-## Phase 1: Kafka Client Migration
+## Phase 1: Kafka Client Migration ✅
 
 Replace archived `kafka-python-ng` with the original `kafka-python`, which resumed active development. The `kafka-python-ng` repository was archived in July 2025 and no longer receives updates or security patches.
 
