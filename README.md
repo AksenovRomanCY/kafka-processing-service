@@ -3,16 +3,19 @@
 
 # Kafka Processing Service
 
-The application simulates the background processing of tasks:
+Background task processing pipeline built with Kafka, Celery, and Redis.
 
-1. **Consumer**: reads from Kafka (`input`), validates JSON with a number, sends to `error` on error, runs background tasks on success.
-2. **Background tasks (Celery + Redis)**:
-   - `task_1`: prints the input, adds 100, generates an exception at a random moment and, on success, passes `task_2`.
-   - `task_2`: prints the input, subtracts 1000, generates an exception and, on success, sends the JSON result to Kafka `output`.
-   Automatic retries are provided - no data is lost.
+1. **Consumer** (aiokafka): reads from Kafka `input`, validates JSON, sends invalid messages to `error` topic, dispatches a Celery chain for valid ones.
+2. **Celery chain** (Redis broker):
+   - `task_1`: adds 100 to the input value
+   - `task_2`: subtracts 1000
+   - `send_kafka_task`: publishes `{"result": <number>, "trace_id": "<uuid>"}` to Kafka `output`
+
+   Each task retries on `TransientProcessingError` with exponential backoff. Permanently failed tasks are sent to a Dead Letter Queue (`dead-letter` topic).
+3. **Observability**: structured JSON logging with per-message `trace_id` correlation across all components.
 
 Documentation:
-- 📦 [INSTALLATION](docs/INSTALLATION.md)
-- 🚀 [USAGE](docs/USAGE.md)
-- 🏗️ [ARCHITECTURE](docs/ARCHITECTURE.md)
-- 🧪 [TESTING](docs/TESTING.md)
+- [INSTALLATION](docs/INSTALLATION.md)
+- [USAGE](docs/USAGE.md)
+- [ARCHITECTURE](docs/ARCHITECTURE.md)
+- [TESTING](docs/TESTING.md)

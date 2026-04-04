@@ -1,6 +1,6 @@
 # Testing
 
-## ✅ Unit Tests
+## Unit Tests
 
 ### Launch:
 
@@ -10,27 +10,63 @@ poetry run pytest
 
 ### What's covered:
 
-* **Validation of JSON** in `handle_message`:
-
-  * valid payload
-  * invalid JSON
+* **Consumer (`handle_message`)**:
+  * valid payload dispatches a Celery chain with `trace_id`
+  * invalid JSON sends to error topic
   * missing `value` or `null` field
   * non-numeric value
   * float and negative numbers
+  * `trace_id` is generated and included in log records and error messages
 
-* **Celery-task logic** `task_1` and `task_2`:
+* **Consumer (`consume`)**:
+  * processes messages and commits offsets
+  * starts producer before consumer
+  * creates consumer with correct settings
+  * registers signal handlers (SIGTERM, SIGINT)
+  * stops gracefully on shutdown signal
+  * calls stop on both normal exit and exception
 
-  * successful path (`value + 100 → task_2.delay`; `value - 1000 → send_to_kafka`)
-  * exception branch (unpacking `random_fail`)
+* **Consumer heartbeat**:
+  * touches liveness file periodically
+  * stops on event
+  * updates mtime across iterations
 
-* **Swap all calls** of `send_to_kafka` to a stub
+* **Celery tasks** (`task_1`, `task_2`, `send_kafka_task`):
+  * `task_1` returns `value + 100`
+  * `task_2` returns `value - 1000`
+  * `send_kafka_task` sends result with `trace_id` to output topic
+  * `trace_id` propagation through all tasks
 
-## 🔬 E2E (docker-compose)
+* **Dead Letter Queue**:
+  * `DLQTask.on_failure` sends failure details to `dead-letter` topic
+
+* **`AsyncKafkaProducer`**:
+  * `start()` creates and starts underlying producer
+  * `start()` raises if already running
+  * `stop()` stops and clears
+  * `send()` calls `send_and_wait`
+  * `send()` raises if not started
+  * value serializer produces valid JSON
+
+* **`SyncKafkaProducer`**:
+  * lazy initialization on first call
+  * reuses producer on subsequent calls
+  * `send()` calls `send` + `get(timeout=10)`
+  * `close()` closes and clears
+  * value serializer produces valid JSON
+
+### Test isolation:
+
+All Kafka producers are stubbed via `conftest.py` autouse fixture — no broker required. Celery tasks run in eager mode (synchronous, no Redis required).
+
+## E2E (Docker Compose)
 
 ```bash
-docker-compose up --build --abort-on-container-exit
+docker compose up -d --build
 ```
 
 Check:
-* All services are running
-* Console producer/consumer is working correctly
+* `docker compose ps` — all services show `healthy` status
+* Send a message to `input`, verify result in `output`
+* Send invalid JSON to `input`, verify error in `error` topic
+* Check logs for JSON format and `trace_id` correlation: `docker compose logs`

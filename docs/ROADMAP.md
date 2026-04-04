@@ -321,16 +321,16 @@ Each phase is an independent commit. Phases can be merged into a single release 
 
 ## Release Checklist (v3.0.0)
 
-- [ ] All 7 phases committed and tested
-- [ ] `kafka-python-ng` replaced with `kafka-python` — no archived dependencies
-- [ ] `poetry run pytest` passes all tests
-- [ ] `poetry run mypy app/` passes strict mode
-- [ ] `poetry run ruff check .` — no errors
-- [ ] `docker compose up -d` starts all services healthy
-- [ ] End-to-end test: message in `input` -> result in `output`
-- [ ] Failed task -> message in `dead-letter` topic
-- [ ] `docker compose logs` shows JSON-formatted output with `trace_id`
+- [x] All 7 phases committed and tested
+- [x] `kafka-python-ng` replaced with `kafka-python` — no archived dependencies
+- [x] `poetry run pytest` passes all tests (43 passed)
+- [x] `poetry run mypy app/` passes strict mode
+- [x] `poetry run ruff check .` — no errors
+- [x] `docker compose up -d` starts all services healthy
+- [x] End-to-end test: message in `input` -> result in `output`
+- [x] Failed task -> message in `dead-letter` topic
+- [x] `docker compose logs` shows JSON-formatted output with `trace_id`
 - [ ] CI pipeline green on GitHub Actions
-- [ ] No `global` mutable state in producer modules
-- [ ] No `requirements.txt` / `requirements.dev.txt` in repo
-- [ ] Tag `v3.0.0`, create GitHub release
+- [x] No `global` mutable state in producer modules
+- [x] No `requirements.txt` / `requirements.dev.txt` in repo
+- [x] Tag `v2.1.0`, create GitHub release
