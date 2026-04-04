@@ -6,11 +6,12 @@ import logging
 import signal
 
 from aiokafka import AIOKafkaConsumer
+from celery import chain
 
 import app.logging_config  # noqa: F401
 from app.kafka.producer import send_to_kafka, start_producer, stop_producer
 from app.settings import settings
-from app.worker_tasks import task_1
+from app.worker_tasks import send_kafka_task, task_1, task_2
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,12 @@ async def handle_message(raw_value: str) -> None:
 
         logger.info("Valid value: %s", number)
 
-        res = task_1.delay(number)
-        logger.info("Celery task_1 started with ID: %s", res.id)
+        res = chain(
+            task_1.s(number),
+            task_2.s(),
+            send_kafka_task.s(),
+        ).apply_async()
+        logger.info("Celery chain started with ID: %s", res.id)
 
     except Exception as e:
         logger.error("Invalid message: %s — %s", raw_value, e)

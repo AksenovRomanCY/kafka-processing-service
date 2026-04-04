@@ -10,19 +10,6 @@ import pytest
 
 from app.kafka.consumer import consume, handle_message
 from app.settings import settings
-from app.worker_tasks import task_1
-
-
-class DummyAsyncResult:
-    def __init__(self, id_):
-        self.id = id_
-
-
-class DummyTask:
-    @staticmethod
-    def delay(val):  # noqa
-        return DummyAsyncResult("dummy-id")
-
 
 # ── helpers ──────────────────────────────────────────────────────
 
@@ -77,12 +64,21 @@ def _loop_proxy(callbacks=None):
 
 @pytest.mark.asyncio
 async def test_handle_message_valid(monkeypatch, caplog):
-    monkeypatch.setattr(task_1, "delay", DummyTask.delay)
+    mock_chain_instance = MagicMock()
+    mock_result = MagicMock()
+    mock_result.id = "chain-id"
+    mock_chain_instance.apply_async.return_value = mock_result
+
+    mock_chain_fn = MagicMock(return_value=mock_chain_instance)
+    monkeypatch.setattr("app.kafka.consumer.chain", mock_chain_fn)
+
     with caplog.at_level(logging.INFO):
         await handle_message(json.dumps({"value": 42}))
 
     assert "Valid value: 42" in caplog.text
-    assert "Celery task_1 started with ID: dummy-id" in caplog.text
+    assert "Celery chain started with ID: chain-id" in caplog.text
+    mock_chain_fn.assert_called_once()
+    mock_chain_instance.apply_async.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -151,15 +147,23 @@ async def test_handle_message_non_numeric_value(monkeypatch, caplog):
 
 @pytest.mark.asyncio
 async def test_handle_message_float_and_negative(monkeypatch, caplog):
-    """Correct float and negative numbers are valid and go into task_1."""
-    monkeypatch.setattr(task_1, "delay", DummyTask.delay)
+    """Correct float and negative numbers are valid and dispatch a chain."""
+    mock_chain_instance = MagicMock()
+    mock_result = MagicMock()
+    mock_result.id = "chain-id"
+    mock_chain_instance.apply_async.return_value = mock_result
+
+    mock_chain_fn = MagicMock(return_value=mock_chain_instance)
+    monkeypatch.setattr("app.kafka.consumer.chain", mock_chain_fn)
 
     for val in [3.14, -1000.5]:
         caplog.clear()
+        mock_chain_fn.reset_mock()
         with caplog.at_level(logging.INFO):
             await handle_message(json.dumps({"value": val}))
         assert f"Valid value: {val}" in caplog.text
-        assert "Celery task_1 started with ID: dummy-id" in caplog.text
+        assert "Celery chain started with ID: chain-id" in caplog.text
+        mock_chain_fn.assert_called_once()
 
 
 # ── consume() ────────────────────────────────────────────────────

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     KAFKA_INPUT_TOPIC: str = "input"
     KAFKA_OUTPUT_TOPIC: str = "output"
     KAFKA_ERROR_TOPIC: str = "error"
+    KAFKA_DLQ_TOPIC: str = "dead-letter"
 
     KAFKA_GROUP_ID: str = "kafka-handler-group"
 

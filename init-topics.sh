@@ -4,7 +4,7 @@ set -e
 echo "📦 Loading .env"
 export $(grep -v '^#' /opt/config/.env | xargs)
 
-TOPICS=("$KAFKA_INPUT_TOPIC" "$KAFKA_OUTPUT_TOPIC" "$KAFKA_ERROR_TOPIC")
+TOPICS=("$KAFKA_INPUT_TOPIC" "$KAFKA_OUTPUT_TOPIC" "$KAFKA_ERROR_TOPIC" "$KAFKA_DLQ_TOPIC")
 
 for TOPIC in "${TOPICS[@]}"; do
   echo "🔧 Creating topic: $TOPIC"

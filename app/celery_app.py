@@ -16,5 +16,6 @@ celery_app = Celery(
 celery_app.conf.update(
     task_track_started=True,
     task_time_limit=settings.CELERY_TASK_TIME_LIMIT,
-    result_backend=None,
+    result_backend=settings.REDIS_BROKER_URL,
+    result_expires=3600,
 )
