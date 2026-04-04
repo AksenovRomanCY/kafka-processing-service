@@ -21,6 +21,6 @@ RUN poetry install --only main --no-root && rm -rf ${POETRY_CACHE_DIR}
 COPY --chown=appuser:appuser . .
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["python", "-c", "import os; os.getpid()"]
+  CMD ["sh", "-c", "test -f /tmp/consumer-alive && find /tmp/consumer-alive -mmin -1 | grep -q ."]
 
 USER appuser

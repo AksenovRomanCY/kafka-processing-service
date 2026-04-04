@@ -18,19 +18,19 @@ def celery_eager():
 def patch_kafka_producers(monkeypatch):
     """Replace all Kafka producer calls with stubs.
 
-    Patches both the async producer (used by consumer) and the sync
-    producer (used by worker tasks) so tests run without a Kafka broker.
+    Patches both the async producer class (used by consumer) and the sync
+    producer instance (used by worker tasks) so tests run without a Kafka broker.
     """
 
-    async def dummy_async_send(topic: str, data: dict[str, Any]) -> None:
+    async def dummy_async_send(self: Any, topic: str, data: dict[str, Any]) -> None:
         return None
 
     def dummy_sync_send(topic: str, data: dict[str, Any]) -> None:
         return None
 
-    # Async producer used by consumer's handle_message
-    monkeypatch.setattr("app.kafka.producer.send_to_kafka", dummy_async_send)
-    monkeypatch.setattr("app.kafka.consumer.send_to_kafka", dummy_async_send)
+    # Async producer: patch the class method so any instance's send is a no-op
+    monkeypatch.setattr("app.kafka.producer.AsyncKafkaProducer.send", dummy_async_send)
 
-    # Sync producer used by worker tasks
-    monkeypatch.setattr("app.worker_tasks.sync_send_to_kafka", dummy_sync_send)
+    # Sync producer: patch the module-level instance's send method
+    monkeypatch.setattr("app.kafka.sync_producer.sync_producer.send", dummy_sync_send)
+    monkeypatch.setattr("app.worker_tasks.sync_producer.send", dummy_sync_send)

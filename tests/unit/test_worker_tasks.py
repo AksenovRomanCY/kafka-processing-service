@@ -29,7 +29,7 @@ def test_send_kafka_task_calls_sync_producer(monkeypatch):
         sent["topic"] = topic
         sent["data"] = data
 
-    monkeypatch.setattr("app.worker_tasks.sync_send_to_kafka", fake_sync_send)
+    monkeypatch.setattr("app.worker_tasks.sync_producer.send", fake_sync_send)
 
     send_kafka_task.run(result=123.45)
     assert sent["topic"] == settings.KAFKA_OUTPUT_TOPIC
@@ -44,7 +44,7 @@ def test_dlq_on_failure_sends_to_dlq_topic(monkeypatch):
         sent["topic"] = topic
         sent["data"] = data
 
-    monkeypatch.setattr("app.worker_tasks.sync_send_to_kafka", fake_sync_send)
+    monkeypatch.setattr("app.worker_tasks.sync_producer.send", fake_sync_send)
 
     task_instance = DLQTask()
     task_instance.name = "app.worker_tasks.task_1"
@@ -73,7 +73,7 @@ def test_dlq_on_failure_includes_traceback(monkeypatch):
         sent["topic"] = topic
         sent["data"] = data
 
-    monkeypatch.setattr("app.worker_tasks.sync_send_to_kafka", fake_sync_send)
+    monkeypatch.setattr("app.worker_tasks.sync_producer.send", fake_sync_send)
 
     task_instance = DLQTask()
     task_instance.name = "app.worker_tasks.task_2"
@@ -120,7 +120,7 @@ def test_send_kafka_task_includes_trace_id_in_message(monkeypatch):
         sent["topic"] = topic
         sent["data"] = data
 
-    monkeypatch.setattr("app.worker_tasks.sync_send_to_kafka", fake_sync_send)
+    monkeypatch.setattr("app.worker_tasks.sync_producer.send", fake_sync_send)
 
     send_kafka_task.run(result=123.45, trace_id="t-789")
     assert sent["data"] == {"result": 123.45, "trace_id": "t-789"}
@@ -134,7 +134,7 @@ def test_dlq_on_failure_includes_trace_id(monkeypatch):
         sent["topic"] = topic
         sent["data"] = data
 
-    monkeypatch.setattr("app.worker_tasks.sync_send_to_kafka", fake_sync_send)
+    monkeypatch.setattr("app.worker_tasks.sync_producer.send", fake_sync_send)
 
     task_instance = DLQTask()
     task_instance.name = "app.worker_tasks.task_1"

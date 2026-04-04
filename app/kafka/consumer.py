@@ -5,19 +5,41 @@ import json
 import logging
 import signal
 import uuid
+from contextlib import suppress
+from pathlib import Path
 
 from aiokafka import AIOKafkaConsumer
 from celery import chain
 
 import app.logging_config  # noqa: F401
-from app.kafka.producer import send_to_kafka, start_producer, stop_producer
+from app.kafka.producer import AsyncKafkaProducer
 from app.settings import settings
 from app.worker_tasks import send_kafka_task, task_1, task_2
 
 logger = logging.getLogger(__name__)
 
+LIVENESS_PATH = Path("/tmp/consumer-alive")
 
-async def handle_message(raw_value: str) -> None:
+
+async def _heartbeat_loop(
+    stop_event: asyncio.Event,
+    path: Path = LIVENESS_PATH,
+    interval_seconds: int = 20,
+) -> None:
+    """Touch a liveness file periodically while the consumer is running.
+
+    The Dockerfile HEALTHCHECK verifies this file's mtime is < 1 minute,
+    so the interval must be well under 60 seconds.
+    """
+    while not stop_event.is_set():
+        path.touch()
+        try:
+            await asyncio.wait_for(stop_event.wait(), timeout=interval_seconds)
+        except TimeoutError:
+            pass
+
+
+async def handle_message(raw_value: str, producer: AsyncKafkaProducer) -> None:
     """Validate and process a raw Kafka message.
 
     Parses the raw JSON string, extracts the numeric 'value' field,
@@ -25,11 +47,8 @@ async def handle_message(raw_value: str) -> None:
     messages to the configured error topic.
 
     Args:
-        raw_value (str): The raw message payload as a JSON-formatted string.
-
-    Raises:
-        ValueError: If the 'value' field is missing or not a number.
-        json.JSONDecodeError: If the raw_value is not valid JSON.
+        raw_value: The raw message payload as a JSON-formatted string.
+        producer: Async Kafka producer for sending error messages.
     """
     trace_id = str(uuid.uuid4())
 
@@ -54,7 +73,7 @@ async def handle_message(raw_value: str) -> None:
         logger.error(
             "Invalid message: %s — %s", raw_value, e, extra={"trace_id": trace_id}
         )
-        await send_to_kafka(
+        await producer.send(
             topic=settings.KAFKA_ERROR_TOPIC,
             data={"error": raw_value, "trace_id": trace_id},
         )
@@ -63,10 +82,10 @@ async def handle_message(raw_value: str) -> None:
 async def consume() -> None:
     """Consume messages from Kafka input topic and process them.
 
-    Creates and starts a persistent AIOKafkaProducer and an AIOKafkaConsumer,
-    iterates over incoming messages, delegates each message to `handle_message`,
+    Creates and starts a persistent AsyncKafkaProducer and AIOKafkaConsumer,
+    iterates over incoming messages, delegates each to handle_message,
     and commits offsets manually. Handles SIGTERM/SIGINT for graceful shutdown.
-    Ensures cleanup of both consumer and producer on exit.
+    Ensures cleanup of consumer, producer, and heartbeat on exit.
     """
     stop_event = asyncio.Event()
     loop = asyncio.get_running_loop()
@@ -74,7 +93,10 @@ async def consume() -> None:
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(sig, stop_event.set)
 
-    await start_producer()
+    producer = AsyncKafkaProducer()
+    await producer.start()
+
+    heartbeat_task = asyncio.create_task(_heartbeat_loop(stop_event))
 
     consumer = AIOKafkaConsumer(
         settings.KAFKA_INPUT_TOPIC,
@@ -106,12 +128,17 @@ async def consume() -> None:
             raw_value = msg.value
             logger.info("Message received: %s", raw_value)
 
-            await handle_message(raw_value)
+            await handle_message(raw_value, producer)
             await consumer.commit()
 
     finally:
         await consumer.stop()
-        await stop_producer()
+        await producer.stop()
+        stop_event.set()
+        heartbeat_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await heartbeat_task
+        LIVENESS_PATH.unlink(missing_ok=True)
         logger.info("Consumer shut down cleanly")
 
 

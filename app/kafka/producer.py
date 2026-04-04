@@ -4,65 +4,71 @@ import json
 import logging
 from typing import Any
 
-from aiokafka import AIOKafkaProducer
+from aiokafka import AIOKafkaProducer as _AIOKafkaProducer
 
 from app.settings import settings
 
 logger = logging.getLogger(__name__)
 
-_producer: AIOKafkaProducer | None = None
 
+class AsyncKafkaProducer:
+    """Async Kafka producer with explicit lifecycle management.
 
-async def start_producer() -> None:
-    """Initialize and start the module-level async Kafka producer.
-
-    Must be called once before any send_to_kafka() calls.
-    Typically called at consumer startup.
-
-    Raises:
-        RuntimeError: If the producer is already running.
-    """
-    global _producer
-    if _producer is not None:
-        raise RuntimeError("Async Kafka producer is already running")
-
-    _producer = AIOKafkaProducer(
-        bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
-        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-    )
-    await _producer.start()
-    logger.info("Async Kafka producer started")
-
-
-async def stop_producer() -> None:
-    """Stop and release the module-level async Kafka producer.
-
-    Safe to call even if the producer was never started (no-op).
-    """
-    global _producer
-    if _producer is None:
-        return
-
-    await _producer.stop()
-    _producer = None
-    logger.info("Async Kafka producer stopped")
-
-
-async def send_to_kafka(topic: str, data: dict[str, Any]) -> None:
-    """Send a JSON-encoded message to a Kafka topic using the persistent producer.
+    Wraps AIOKafkaProducer with start/stop/send methods.
+    Instantiate in consume() and pass to message handlers.
 
     Args:
-        topic: The Kafka topic to publish to.
-        data: A JSON-serializable dictionary for the message payload.
-
-    Raises:
-        RuntimeError: If the producer has not been started.
-        KafkaError: If the send operation fails.
+        bootstrap_servers: Kafka broker address. Defaults to settings value.
     """
-    if _producer is None:
-        raise RuntimeError(
-            "Async Kafka producer is not running. Call start_producer() first."
-        )
 
-    await _producer.send_and_wait(topic, data)
-    logger.info("Posted in Topic '%s': %s", topic, data)
+    def __init__(
+        self, bootstrap_servers: str = settings.KAFKA_BOOTSTRAP_SERVERS
+    ) -> None:
+        self._bootstrap_servers = bootstrap_servers
+        self._producer: _AIOKafkaProducer | None = None
+
+    async def start(self) -> None:
+        """Create and start the underlying AIOKafkaProducer.
+
+        Raises:
+            RuntimeError: If the producer is already running.
+        """
+        if self._producer is not None:
+            raise RuntimeError("Async Kafka producer is already running")
+
+        self._producer = _AIOKafkaProducer(
+            bootstrap_servers=self._bootstrap_servers,
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+        )
+        await self._producer.start()
+        logger.info("Async Kafka producer started")
+
+    async def stop(self) -> None:
+        """Stop the producer and release resources.
+
+        Safe to call even if the producer was never started (no-op).
+        """
+        if self._producer is None:
+            return
+
+        await self._producer.stop()
+        self._producer = None
+        logger.info("Async Kafka producer stopped")
+
+    async def send(self, topic: str, data: dict[str, Any]) -> None:
+        """Send a JSON-encoded message to a Kafka topic.
+
+        Args:
+            topic: The Kafka topic to publish to.
+            data: A JSON-serializable dictionary for the message payload.
+
+        Raises:
+            RuntimeError: If the producer has not been started.
+        """
+        if self._producer is None:
+            raise RuntimeError(
+                "Async Kafka producer is not running. Call start() first."
+            )
+
+        await self._producer.send_and_wait(topic, data)
+        logger.info("Posted in Topic '%s': %s", topic, data)

@@ -6,7 +6,7 @@ from typing import Any
 
 from app.celery_app import celery_app
 from app.exceptions import TransientProcessingError
-from app.kafka.sync_producer import sync_send_to_kafka
+from app.kafka.sync_producer import sync_producer
 from app.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class DLQTask(celery_app.Task):  # type: ignore[misc]
             exc,
             extra={"trace_id": trace_id},
         )
-        sync_send_to_kafka(
+        sync_producer.send(
             topic=settings.KAFKA_DLQ_TOPIC,
             data={
                 "task_name": self.name,
@@ -112,7 +112,7 @@ def send_kafka_task(self: Any, result: float, *, trace_id: str = "") -> None:
     Uses a synchronous KafkaProducer singleton to avoid event loop
     creation overhead in the Celery worker process.
     """
-    sync_send_to_kafka(
+    sync_producer.send(
         topic=settings.KAFKA_OUTPUT_TOPIC,
         data={"result": result, "trace_id": trace_id},
     )

@@ -70,6 +70,12 @@ services:
       init-kafka-topics:
         condition: service_completed_successfully
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/consumer-alive && find /tmp/consumer-alive -mmin -1 | grep -q ."]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
   worker:
     build:
@@ -85,3 +91,9 @@ services:
       kafka:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.celery_app:celery_app inspect ping --timeout 5"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
