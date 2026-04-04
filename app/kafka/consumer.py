@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import signal
+import uuid
 
 from aiokafka import AIOKafkaConsumer
 from celery import chain
@@ -30,26 +31,32 @@ async def handle_message(raw_value: str) -> None:
         ValueError: If the 'value' field is missing or not a number.
         json.JSONDecodeError: If the raw_value is not valid JSON.
     """
+    trace_id = str(uuid.uuid4())
+
     try:
         payload = json.loads(raw_value)
         number = payload.get("value")
         if not isinstance(number, (int, float)):
             raise ValueError("The 'value' field is missing or not a number")
 
-        logger.info("Valid value: %s", number)
+        logger.info("Valid value: %s", number, extra={"trace_id": trace_id})
 
         res = chain(
-            task_1.s(number),
-            task_2.s(),
-            send_kafka_task.s(),
+            task_1.s(number, trace_id=trace_id),
+            task_2.s(trace_id=trace_id),
+            send_kafka_task.s(trace_id=trace_id),
         ).apply_async()
-        logger.info("Celery chain started with ID: %s", res.id)
+        logger.info(
+            "Celery chain started with ID: %s", res.id, extra={"trace_id": trace_id}
+        )
 
     except Exception as e:
-        logger.error("Invalid message: %s — %s", raw_value, e)
+        logger.error(
+            "Invalid message: %s — %s", raw_value, e, extra={"trace_id": trace_id}
+        )
         await send_to_kafka(
             topic=settings.KAFKA_ERROR_TOPIC,
-            data={"error": raw_value},
+            data={"error": raw_value, "trace_id": trace_id},
         )
 
 

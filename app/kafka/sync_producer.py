@@ -42,6 +42,7 @@ def sync_send_to_kafka(topic: str, data: dict[str, Any]) -> None:
     Raises:
         KafkaError: If the send operation fails.
     """
+    trace_id = data.get("trace_id", "")
     producer = _get_producer()
     future = producer.send(topic, data)
     record_metadata = future.get(timeout=10)
@@ -51,6 +52,7 @@ def sync_send_to_kafka(topic: str, data: dict[str, Any]) -> None:
         record_metadata.partition,
         record_metadata.offset,
         data,
+        extra={"trace_id": trace_id},
     )
 
 

@@ -27,11 +27,13 @@ class DLQTask(celery_app.Task):  # type: ignore[misc]
         kwargs: dict[str, Any],
         einfo: Any,
     ) -> None:
+        trace_id = kwargs.get("trace_id", "")
         logger.error(
             "Task %s[%s] failed permanently: %s",
             self.name,
             task_id,
             exc,
+            extra={"trace_id": trace_id},
         )
         sync_send_to_kafka(
             topic=settings.KAFKA_DLQ_TOPIC,
@@ -42,6 +44,7 @@ class DLQTask(celery_app.Task):  # type: ignore[misc]
                 "kwargs": kwargs,
                 "exception": str(exc),
                 "traceback": traceback.format_exception(exc),
+                "trace_id": trace_id,
             },
         )
 
@@ -53,7 +56,7 @@ class DLQTask(celery_app.Task):  # type: ignore[misc]
     retry_backoff=True,
     max_retries=settings.CELERY_MAX_RETRIES,
 )
-def task_1(self: Any, value: float) -> float:
+def task_1(self: Any, value: float, *, trace_id: str = "") -> float:
     """Process the input value by adding 100.
 
     Returns the new value for the next task in the chain.
@@ -61,11 +64,12 @@ def task_1(self: Any, value: float) -> float:
     Args:
         self: The bound task instance providing access to retry context.
         value: Numeric input to be processed.
+        trace_id: Correlation ID for tracing the message through the pipeline.
     """
-    logger.info("Received: %s", value)
+    logger.info("Received: %s", value, extra={"trace_id": trace_id})
 
     new_value = value + 100
-    logger.info("After +100: %s", new_value)
+    logger.info("After +100: %s", new_value, extra={"trace_id": trace_id})
 
     return new_value
 
@@ -77,7 +81,7 @@ def task_1(self: Any, value: float) -> float:
     retry_backoff=True,
     max_retries=settings.CELERY_MAX_RETRIES,
 )
-def task_2(self: Any, value: float) -> float:
+def task_2(self: Any, value: float, *, trace_id: str = "") -> float:
     """Process the input value by subtracting 1000.
 
     Returns the result for the next task in the chain.
@@ -85,11 +89,12 @@ def task_2(self: Any, value: float) -> float:
     Args:
         self: The bound task instance providing access to retry context.
         value: Numeric input from the preceding task.
+        trace_id: Correlation ID for tracing the message through the pipeline.
     """
-    logger.info("Received: %s", value)
+    logger.info("Received: %s", value, extra={"trace_id": trace_id})
 
     result = value - 1000
-    logger.info("After -1000: %s", result)
+    logger.info("After -1000: %s", result, extra={"trace_id": trace_id})
 
     return result
 
@@ -101,7 +106,7 @@ def task_2(self: Any, value: float) -> float:
     retry_backoff=True,
     max_retries=settings.CELERY_MAX_RETRIES,
 )
-def send_kafka_task(self: Any, result: float) -> None:
+def send_kafka_task(self: Any, result: float, *, trace_id: str = "") -> None:
     """Send computed result to the Kafka output topic.
 
     Uses a synchronous KafkaProducer singleton to avoid event loop
@@ -109,5 +114,5 @@ def send_kafka_task(self: Any, result: float) -> None:
     """
     sync_send_to_kafka(
         topic=settings.KAFKA_OUTPUT_TOPIC,
-        data={"result": result},
+        data={"result": result, "trace_id": trace_id},
     )

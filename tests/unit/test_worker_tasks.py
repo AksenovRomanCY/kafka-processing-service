@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import pytest  # noqa: F401
@@ -32,7 +33,7 @@ def test_send_kafka_task_calls_sync_producer(monkeypatch):
 
     send_kafka_task.run(result=123.45)
     assert sent["topic"] == settings.KAFKA_OUTPUT_TOPIC
-    assert sent["data"] == {"result": 123.45}
+    assert sent["data"]["result"] == 123.45
 
 
 def test_dlq_on_failure_sends_to_dlq_topic(monkeypatch):
@@ -88,3 +89,63 @@ def test_dlq_on_failure_includes_traceback(monkeypatch):
 
     assert sent["data"]["traceback"] is not None
     assert isinstance(sent["data"]["traceback"], list)
+
+
+# ── trace_id ────────────────────────────────────────────────────
+
+
+def test_task_1_logs_include_trace_id(caplog):
+    """task_1 log records carry the supplied trace_id."""
+    with caplog.at_level(logging.INFO):
+        task_1.run(value=10, trace_id="t-123")
+
+    for record in caplog.records:
+        assert record.trace_id == "t-123"
+
+
+def test_task_2_logs_include_trace_id(caplog):
+    """task_2 log records carry the supplied trace_id."""
+    with caplog.at_level(logging.INFO):
+        task_2.run(value=200, trace_id="t-456")
+
+    for record in caplog.records:
+        assert record.trace_id == "t-456"
+
+
+def test_send_kafka_task_includes_trace_id_in_message(monkeypatch):
+    """send_kafka_task includes trace_id in the outgoing Kafka message."""
+    sent: dict[str, Any] = {}
+
+    def fake_sync_send(topic: str, data: dict[str, Any]) -> None:
+        sent["topic"] = topic
+        sent["data"] = data
+
+    monkeypatch.setattr("app.worker_tasks.sync_send_to_kafka", fake_sync_send)
+
+    send_kafka_task.run(result=123.45, trace_id="t-789")
+    assert sent["data"] == {"result": 123.45, "trace_id": "t-789"}
+
+
+def test_dlq_on_failure_includes_trace_id(monkeypatch):
+    """on_failure handler includes trace_id from kwargs in DLQ message."""
+    sent: dict[str, Any] = {}
+
+    def fake_sync_send(topic: str, data: dict[str, Any]) -> None:
+        sent["topic"] = topic
+        sent["data"] = data
+
+    monkeypatch.setattr("app.worker_tasks.sync_send_to_kafka", fake_sync_send)
+
+    task_instance = DLQTask()
+    task_instance.name = "app.worker_tasks.task_1"
+
+    exc = ValueError("something broke")
+    task_instance.on_failure(
+        exc=exc,
+        task_id="abc-123",
+        args=(42.0,),
+        kwargs={"trace_id": "t-dlq"},
+        einfo=None,
+    )
+
+    assert sent["data"]["trace_id"] == "t-dlq"

@@ -59,7 +59,66 @@ def _loop_proxy(callbacks=None):
     return patch("asyncio.get_running_loop", return_value=_LoopProxy(loop, callbacks))
 
 
-# ── handle_message() ─────────────────────────────────────────────
+# ── handle_message() ───────────────────────────────────────────���─
+
+
+@pytest.mark.asyncio
+async def test_handle_message_passes_trace_id_to_chain(monkeypatch):
+    """handle_message generates a trace_id and passes it to all tasks in the chain."""
+    mock_chain_instance = MagicMock()
+    mock_result = MagicMock()
+    mock_result.id = "chain-id"
+    mock_chain_instance.apply_async.return_value = mock_result
+
+    mock_chain_fn = MagicMock(return_value=mock_chain_instance)
+    monkeypatch.setattr("app.kafka.consumer.chain", mock_chain_fn)
+
+    fixed_uuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    monkeypatch.setattr("app.kafka.consumer.uuid.uuid4", lambda: fixed_uuid)
+
+    await handle_message(json.dumps({"value": 42}))
+
+    args = mock_chain_fn.call_args[0]
+    for sig in args:
+        assert sig.kwargs.get("trace_id") == fixed_uuid
+
+
+@pytest.mark.asyncio
+async def test_handle_message_includes_trace_id_in_logs(monkeypatch, caplog):
+    """Log records from handle_message carry trace_id in extra fields."""
+    mock_chain_instance = MagicMock()
+    mock_result = MagicMock()
+    mock_result.id = "chain-id"
+    mock_chain_instance.apply_async.return_value = mock_result
+    mock_chain_fn = MagicMock(return_value=mock_chain_instance)
+    monkeypatch.setattr("app.kafka.consumer.chain", mock_chain_fn)
+
+    with caplog.at_level(logging.INFO):
+        await handle_message(json.dumps({"value": 42}))
+
+    traced = [r for r in caplog.records if hasattr(r, "trace_id")]
+    assert len(traced) >= 2
+    trace_ids = {r.trace_id for r in traced}
+    assert len(trace_ids) == 1
+    assert len(trace_ids.pop()) == 36
+
+
+@pytest.mark.asyncio
+async def test_handle_message_error_includes_trace_id(monkeypatch, caplog):
+    """Error path includes trace_id in the Kafka error message."""
+    sent: dict = {}
+
+    async def fake_send(topic, data):
+        sent["topic"] = topic
+        sent["data"] = data
+
+    monkeypatch.setattr("app.kafka.consumer.send_to_kafka", fake_send)
+
+    with caplog.at_level(logging.ERROR):
+        await handle_message("not-json")
+
+    assert "trace_id" in sent["data"]
+    assert len(sent["data"]["trace_id"]) == 36
 
 
 @pytest.mark.asyncio
@@ -97,7 +156,8 @@ async def test_handle_message_invalid(monkeypatch, caplog):
 
     assert "Invalid message: not-a-json" in caplog.text
     assert sent["topic"] == settings.KAFKA_ERROR_TOPIC
-    assert sent["data"] == {"error": bad}
+    assert sent["data"]["error"] == bad
+    assert "trace_id" in sent["data"]
 
 
 @pytest.mark.asyncio
@@ -116,7 +176,8 @@ async def test_handle_message_missing_value(monkeypatch, caplog):
         await handle_message(json.dumps({}))
     assert "Invalid message" in caplog.text
     assert sent["topic"] == settings.KAFKA_ERROR_TOPIC
-    assert sent["data"] == {"error": "{}"}
+    assert sent["data"]["error"] == "{}"
+    assert "trace_id" in sent["data"]
 
     # Clearly null
     sent.clear()
@@ -124,7 +185,8 @@ async def test_handle_message_missing_value(monkeypatch, caplog):
     with caplog.at_level(logging.ERROR):
         await handle_message(json.dumps({"value": None}))
     assert "Invalid message" in caplog.text
-    assert sent["data"] == {"error": '{"value": null}'}
+    assert sent["data"]["error"] == '{"value": null}'
+    assert "trace_id" in sent["data"]
 
 
 @pytest.mark.asyncio
@@ -142,7 +204,8 @@ async def test_handle_message_non_numeric_value(monkeypatch, caplog):
     with caplog.at_level(logging.ERROR):
         await handle_message(bad)
     assert "Invalid message" in caplog.text
-    assert sent["data"] == {"error": bad}
+    assert sent["data"]["error"] == bad
+    assert "trace_id" in sent["data"]
 
 
 @pytest.mark.asyncio
