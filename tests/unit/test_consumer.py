@@ -55,7 +55,7 @@ def _make_msg(value: str) -> MagicMock:
 
 def _loop_proxy(callbacks=None):
     """Create a patch for asyncio.get_running_loop returning a _LoopProxy."""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return patch("asyncio.get_running_loop", return_value=_LoopProxy(loop, callbacks))
 
 

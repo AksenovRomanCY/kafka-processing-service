@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Docker & Docker Compose
-- (Optional) Python 3.13 and [Poetry](https://python-poetry.org/) for local development
+- (Optional) Python 3.14.5 and [Poetry](https://python-poetry.org/) for local development
 
 ## Cloning and customization
 
@@ -22,8 +22,8 @@ docker compose up -d --build
 ```
 
 This will start:
-- Kafka (KRaft mode, Apache Kafka 4.0)
-- Redis
+- Kafka (KRaft mode, Apache Kafka 4.2.1)
+- Redis 8.8.0
 - Consumer
 - Celery Worker
 - init-kafka-topics (creates `input`, `output`, `error`, `dead-letter`)
