@@ -12,6 +12,21 @@ from app.settings import settings
 logger = logging.getLogger(__name__)
 
 
+def _raise_demo_failure_if_requested(
+    task_name: str,
+    fail: str | None,
+    trace_id: str,
+) -> None:
+    """Raise a retryable error for the explicit DLQ demo scenario."""
+    if fail == task_name:
+        logger.warning(
+            "Demo failure requested for %s",
+            task_name,
+            extra={"trace_id": trace_id},
+        )
+        raise TransientProcessingError(f"Demo failure requested for {task_name}")
+
+
 class DLQTask(celery_app.Task):  # type: ignore[misc]
     """Base task that sends failed messages to the Dead Letter Queue.
 
@@ -56,7 +71,13 @@ class DLQTask(celery_app.Task):  # type: ignore[misc]
     retry_backoff=True,
     max_retries=settings.CELERY_MAX_RETRIES,
 )
-def task_1(self: Any, value: float, *, trace_id: str = "") -> float:
+def task_1(
+    self: Any,
+    value: float,
+    *,
+    trace_id: str = "",
+    fail: str | None = None,
+) -> float:
     """Process the input value by adding 100.
 
     Returns the new value for the next task in the chain.
@@ -65,8 +86,10 @@ def task_1(self: Any, value: float, *, trace_id: str = "") -> float:
         self: The bound task instance providing access to retry context.
         value: Numeric input to be processed.
         trace_id: Correlation ID for tracing the message through the pipeline.
+        fail: Optional demo-only task name that should fail for DLQ showcase.
     """
     logger.info("Received: %s", value, extra={"trace_id": trace_id})
+    _raise_demo_failure_if_requested("task_1", fail, trace_id)
 
     new_value = value + 100
     logger.info("After +100: %s", new_value, extra={"trace_id": trace_id})
@@ -81,7 +104,13 @@ def task_1(self: Any, value: float, *, trace_id: str = "") -> float:
     retry_backoff=True,
     max_retries=settings.CELERY_MAX_RETRIES,
 )
-def task_2(self: Any, value: float, *, trace_id: str = "") -> float:
+def task_2(
+    self: Any,
+    value: float,
+    *,
+    trace_id: str = "",
+    fail: str | None = None,
+) -> float:
     """Process the input value by subtracting 1000.
 
     Returns the result for the next task in the chain.
@@ -90,8 +119,10 @@ def task_2(self: Any, value: float, *, trace_id: str = "") -> float:
         self: The bound task instance providing access to retry context.
         value: Numeric input from the preceding task.
         trace_id: Correlation ID for tracing the message through the pipeline.
+        fail: Optional demo-only task name that should fail for DLQ showcase.
     """
     logger.info("Received: %s", value, extra={"trace_id": trace_id})
+    _raise_demo_failure_if_requested("task_2", fail, trace_id)
 
     result = value - 1000
     logger.info("After -1000: %s", result, extra={"trace_id": trace_id})
@@ -106,12 +137,19 @@ def task_2(self: Any, value: float, *, trace_id: str = "") -> float:
     retry_backoff=True,
     max_retries=settings.CELERY_MAX_RETRIES,
 )
-def send_kafka_task(self: Any, result: float, *, trace_id: str = "") -> None:
+def send_kafka_task(
+    self: Any,
+    result: float,
+    *,
+    trace_id: str = "",
+    fail: str | None = None,
+) -> None:
     """Send computed result to the Kafka output topic.
 
     Uses a synchronous KafkaProducer singleton to avoid event loop
     creation overhead in the Celery worker process.
     """
+    _raise_demo_failure_if_requested("send_kafka_task", fail, trace_id)
     sync_producer.send(
         topic=settings.KAFKA_OUTPUT_TOPIC,
         data={"result": result, "trace_id": trace_id},

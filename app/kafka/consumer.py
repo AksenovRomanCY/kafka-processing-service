@@ -19,6 +19,7 @@ from app.worker_tasks import send_kafka_task, task_1, task_2
 logger = logging.getLogger(__name__)
 
 LIVENESS_PATH = Path("/tmp/consumer-alive")
+DEMO_FAILURE_TASKS = frozenset({"task_1", "task_2", "send_kafka_task"})
 
 
 async def _heartbeat_loop(
@@ -54,16 +55,24 @@ async def handle_message(raw_value: str, producer: AsyncKafkaProducer) -> None:
 
     try:
         payload = json.loads(raw_value)
+        if not isinstance(payload, dict):
+            raise ValueError("Message payload must be a JSON object")
+
         number = payload.get("value")
         if not isinstance(number, (int, float)):
             raise ValueError("The 'value' field is missing or not a number")
 
+        fail_task = payload.get("fail")
+        if fail_task is not None and fail_task not in DEMO_FAILURE_TASKS:
+            allowed = ", ".join(sorted(DEMO_FAILURE_TASKS))
+            raise ValueError(f"The 'fail' field must be one of: {allowed}")
+
         logger.info("Valid value: %s", number, extra={"trace_id": trace_id})
 
         res = chain(
-            task_1.s(number, trace_id=trace_id),
-            task_2.s(trace_id=trace_id),
-            send_kafka_task.s(trace_id=trace_id),
+            task_1.s(number, trace_id=trace_id, fail=fail_task),
+            task_2.s(trace_id=trace_id, fail=fail_task),
+            send_kafka_task.s(trace_id=trace_id, fail=fail_task),
         ).apply_async()
         logger.info(
             "Celery chain started with ID: %s", res.id, extra={"trace_id": trace_id}
