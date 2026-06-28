@@ -6,6 +6,7 @@
 
 - Reads messages from Kafka `input` topic
 - Validates JSON and presence of numeric field `value`
+- Accepts optional demo-only field `fail` with values `task_1`, `task_2`, or `send_kafka_task`
 - Generates a `trace_id` (UUID) per message for end-to-end correlation
 - Invalid messages are forwarded to Kafka `error` topic via async producer
 - Valid data is dispatched as a Celery chain: `task_1 | task_2 | send_kafka_task`
@@ -30,6 +31,15 @@ Tasks are linked via a Celery `chain()` — each task returns a value that becom
 
 All tasks use `autoretry_for=(TransientProcessingError,)`, `retry_backoff=True`, `max_retries` from settings (default 3).
 
+For demonstration, a valid input message can intentionally fail a task:
+
+```json
+{ "value": 10, "fail": "task_2" }
+```
+
+The matching task raises `TransientProcessingError`, Celery retries it, and the
+base task sends a failure record to the DLQ after retries are exhausted.
+
 ### 3. Dead Letter Queue
 
 When a task exhausts all retries, the `DLQTask` base class sends the failure details to the `dead-letter` Kafka topic:
@@ -47,6 +57,78 @@ When a task exhausts all retries, the `DLQTask` base class sends the failure det
 No global mutable state — producers are class instances with explicit lifecycle management.
 
 ## Data flow
+
+High-level pipeline:
+
+```text
+                        +----------------+
+                        | Kafka: input   |
+                        +-------+--------+
+                                |
+                                v
+                        +-------+--------+
+                        | Consumer       |
+                        | validate JSON  |
+                        +---+--------+---+
+                            |        |
+                 valid JSON |        | invalid JSON / bad fail flag
+                            |        v
+                            |   +----+---------+
+                            |   | Kafka: error |
+                            |   +--------------+
+                            v
+                 +----------+-----------+
+                 | Celery chain         |
+                 | task_1 -> task_2 ->  |
+                 | send_kafka_task      |
+                 +-----+----------+-----+
+                       |          |
+                 success          | retries exhausted
+                       v          v
+              +--------+---+  +---+--------------+
+              | Kafka:    |  | Kafka: dead-letter |
+              | output    |  +--------------------+
+              +-----------+
+```
+
+Success path:
+
+```text
+{"value": 10}
+  -> consumer creates trace_id
+  -> task_1: 10 + 100 = 110
+  -> task_2: 110 - 1000 = -890
+  -> send_kafka_task publishes {"result": -890, "trace_id": "..."}
+```
+
+Invalid-message path:
+
+```text
+{"foo": "bar"} or not-json
+  -> consumer validation fails
+  -> AsyncKafkaProducer publishes {"error": <raw message>, "trace_id": "..."}
+```
+
+Retry and DLQ path:
+
+```text
+{"value": 10, "fail": "task_2"}
+  -> task_1 succeeds
+  -> task_2 raises TransientProcessingError
+  -> Celery retries with backoff
+  -> DLQTask.on_failure publishes task details to Kafka: dead-letter
+```
+
+Trace propagation:
+
+```text
+consumer generates trace_id
+  -> task_1(trace_id=...)
+  -> task_2(trace_id=...)
+  -> send_kafka_task(trace_id=...)
+  -> output/error/dead-letter payload
+  -> JSON logs in consumer and worker
+```
 
 ```mermaid
 flowchart TD
@@ -102,13 +184,15 @@ If the worker crashes between steps 3 and 4, the message will not be redelivered
 
 All components use structured JSON logging via `python-json-logger`.
 
-Each log line includes: `timestamp`, `level`, `logger`, `message`.
+Each application log line includes: `timestamp`, `level`, `logger`, `message`.
 A `trace_id` (UUID) is generated per incoming message and propagated through:
 - Consumer → Celery chain arguments (`trace_id` kwarg) → `send_kafka_task` output
+- Consumer and worker JSON logs
+- Error and DLQ Kafka payloads
 
 This allows tracing a single message across all log entries with:
 ```bash
-docker compose logs | grep "<trace_id>"
+make logs-trace TRACE_ID=<trace_id>
 ```
 
 ## Security
