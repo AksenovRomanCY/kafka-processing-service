@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import logging
+import sys
+from io import StringIO
 from typing import Any
 
 import pytest  # noqa: F401
 
+from app.exceptions import TransientProcessingError
+from app.logging_config import setup_logging
 from app.settings import settings
 from app.worker_tasks import DLQTask, send_kafka_task, task_1, task_2
 
@@ -34,6 +38,34 @@ def test_send_kafka_task_calls_sync_producer(monkeypatch):
     send_kafka_task.run(result=123.45)
     assert sent["topic"] == settings.KAFKA_OUTPUT_TOPIC
     assert sent["data"]["result"] == 123.45
+
+
+def test_task_1_raises_demo_failure():
+    """task_1 can be failed intentionally for the DLQ demo."""
+    with pytest.raises(TransientProcessingError, match="task_1"):
+        task_1.run(value=10, fail="task_1")
+
+
+def test_task_2_raises_demo_failure():
+    """task_2 can be failed intentionally for the DLQ demo."""
+    with pytest.raises(TransientProcessingError, match="task_2"):
+        task_2.run(value=200, fail="task_2")
+
+
+def test_send_kafka_task_raises_demo_failure(monkeypatch):
+    """send_kafka_task can be failed intentionally before producing output."""
+    sent: dict[str, Any] = {}
+
+    def fake_sync_send(topic: str, data: dict[str, Any]) -> None:
+        sent["topic"] = topic
+        sent["data"] = data
+
+    monkeypatch.setattr("app.worker_tasks.sync_producer.send", fake_sync_send)
+
+    with pytest.raises(TransientProcessingError, match="send_kafka_task"):
+        send_kafka_task.run(result=123.45, fail="send_kafka_task")
+
+    assert sent == {}
 
 
 def test_dlq_on_failure_sends_to_dlq_topic(monkeypatch):
@@ -149,3 +181,22 @@ def test_dlq_on_failure_includes_trace_id(monkeypatch):
     )
 
     assert sent["data"]["trace_id"] == "t-dlq"
+
+
+def test_json_logging_formatter_includes_trace_id(monkeypatch):
+    """The shared JSON formatter includes trace_id extra fields."""
+    stream = StringIO()
+
+    with monkeypatch.context() as patch_context:
+        patch_context.setattr(sys, "stderr", stream)
+        setup_logging(force=True)
+        logging.getLogger("test-json-logger").info(
+            "worker trace",
+            extra={"trace_id": "t-json"},
+        )
+
+    setup_logging(force=True)
+
+    output = stream.getvalue()
+    assert '"message": "worker trace"' in output
+    assert '"trace_id": "t-json"' in output

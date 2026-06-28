@@ -111,6 +111,24 @@ async def test_handle_message_passes_trace_id_to_chain(monkeypatch, mock_produce
 
 
 @pytest.mark.asyncio
+async def test_handle_message_passes_demo_failure_to_chain(monkeypatch, mock_producer):
+    """handle_message passes optional demo failure flag to all tasks."""
+    mock_chain_instance = MagicMock()
+    mock_result = MagicMock()
+    mock_result.id = "chain-id"
+    mock_chain_instance.apply_async.return_value = mock_result
+
+    mock_chain_fn = MagicMock(return_value=mock_chain_instance)
+    monkeypatch.setattr("app.kafka.consumer.chain", mock_chain_fn)
+
+    await handle_message(json.dumps({"value": 42, "fail": "task_2"}), mock_producer)
+
+    args = mock_chain_fn.call_args[0]
+    for sig in args:
+        assert sig.kwargs.get("fail") == "task_2"
+
+
+@pytest.mark.asyncio
 async def test_handle_message_includes_trace_id_in_logs(
     monkeypatch, mock_producer, caplog
 ):
@@ -205,6 +223,20 @@ async def test_handle_message_non_numeric_value(mock_producer, caplog):
         await handle_message(bad, mock_producer)
     assert "Invalid message" in caplog.text
     call_kwargs = mock_producer.send.call_args[1]
+    assert call_kwargs["data"]["error"] == bad
+    assert "trace_id" in call_kwargs["data"]
+
+
+@pytest.mark.asyncio
+async def test_handle_message_unknown_fail_flag_goes_to_error(mock_producer, caplog):
+    """Unknown demo failure flags are treated as invalid messages."""
+    bad = json.dumps({"value": 10, "fail": "unknown_task"})
+    with caplog.at_level(logging.ERROR):
+        await handle_message(bad, mock_producer)
+
+    assert "The 'fail' field must be one of" in caplog.text
+    call_kwargs = mock_producer.send.call_args[1]
+    assert call_kwargs["topic"] == settings.KAFKA_ERROR_TOPIC
     assert call_kwargs["data"]["error"] == bad
     assert "trace_id" in call_kwargs["data"]
 
