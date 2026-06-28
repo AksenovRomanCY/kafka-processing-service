@@ -18,7 +18,7 @@ Modify `.env` if necessary — see [Environment Variables](#environment-variable
 ## First launch
 
 ```bash
-docker compose up -d --build
+make up
 ```
 
 This will start:
@@ -30,7 +30,7 @@ This will start:
 
 Status check:
 ```bash
-docker compose ps
+make ps
 ```
 
 All services should show `healthy` status.
@@ -38,7 +38,13 @@ All services should show `healthy` status.
 ## Stopping and cleaning
 
 ```bash
-docker compose down -v
+make down
+```
+
+To stop the stack and remove Kafka data volumes:
+
+```bash
+make down-clean
 ```
 
 ## Environment Variables
@@ -65,4 +71,14 @@ All configuration is done via `.env` file (copied from `.env.example`).
 Install all dependencies (including dev tools) via Poetry:
 ```bash
 poetry install
+```
+
+Common development commands:
+
+```bash
+make test
+make lint
+make format-check
+make typecheck
+make ci
 ```

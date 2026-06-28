@@ -14,8 +14,32 @@ Background task processing pipeline built with Kafka, Celery, and Redis.
    Each task retries on `TransientProcessingError` with exponential backoff. Permanently failed tasks are sent to a Dead Letter Queue (`dead-letter` topic).
 3. **Observability**: structured JSON logging with per-message `trace_id` correlation across all components.
 
+## Quick start
+
+```bash
+cp .env.example .env
+make up
+make smoke
+```
+
+Run the scripted showcase:
+
+```bash
+make demo
+```
+
+Useful daily commands:
+
+```bash
+make ci
+make ps
+make logs
+make down
+```
+
 Documentation:
 - [INSTALLATION](docs/INSTALLATION.md)
 - [USAGE](docs/USAGE.md)
 - [ARCHITECTURE](docs/ARCHITECTURE.md)
 - [TESTING](docs/TESTING.md)
+- [DEMO](docs/DEMO.md)
